@@ -104,11 +104,11 @@ export function AIShoppingAssistant({ onAddToCart, onShowSignUpNotice, user }: A
         ]);
         return;
       }
-    } catch (e) {
-      // Fallback silently to client simulation if backend is offline
+    } catch (e: any) {
+      console.warn("[ConciergeUI] Live API endpoint unreachable, attempting fallback:", e.message);
     }
 
-    // 2. Client-side Simulation Fallback
+    // 2. Client-side Simulation Fallback if API server is offline
     setTimeout(() => {
       const lower = textToSend.toLowerCase();
       let matched: CatalogProduct[] = [];
@@ -335,18 +335,18 @@ export function AIShoppingAssistant({ onAddToCart, onShowSignUpNotice, user }: A
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Suggestion Chips */}
+        {/* Suggestion Chips (Horizontal Scrollable) */}
         {messages.length === 1 && (
-          <div className="px-5 py-2.5 border-t border-hairline flex flex-col gap-1.5 bg-surface/5">
+          <div className="px-5 py-2.5 border-t border-hairline flex flex-col gap-1.5 bg-surface/5 overflow-hidden">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Suggested Queries</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-nowrap overflow-x-auto gap-2 py-1 scrollbar-none scroll-smooth -mx-1 px-1">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
-                  className="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface px-3 py-1.5 text-[10px] text-muted-foreground transition hover:border-foreground hover:text-foreground cursor-pointer text-left"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3 py-1.5 text-[10px] text-muted-foreground transition hover:border-foreground hover:text-foreground cursor-pointer shrink-0 whitespace-nowrap"
                 >
-                  {s} <ArrowUpRight className="h-3 w-3 text-accent" />
+                  {s} <ArrowUpRight className="h-3 w-3 text-accent shrink-0" />
                 </button>
               ))}
             </div>
