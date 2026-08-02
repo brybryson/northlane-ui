@@ -86,13 +86,8 @@ function AccountDashboardPage() {
               className="p-6 rounded-2xl bg-background border border-hairline hover:border-foreground/40 transition-all shadow-xs group flex flex-col justify-between"
             >
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-surface border border-hairline flex items-center justify-center text-accent group-hover:scale-105 transition-transform">
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-                    {card.badge}
-                  </span>
+                <div className="w-10 h-10 rounded-xl bg-surface border border-hairline flex items-center justify-center text-accent group-hover:scale-105 transition-transform">
+                  <IconComponent className="w-5 h-5" />
                 </div>
 
                 <div>
