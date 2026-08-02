@@ -1,0 +1,7 @@
+# Northlane Robots Crawl Configuration
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /_authenticated/
+
+Sitemap: https://northlane.studio/sitemap.xml

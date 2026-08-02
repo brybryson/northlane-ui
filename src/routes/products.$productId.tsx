@@ -36,6 +36,29 @@ export const Route = createFileRoute("/products/$productId")({
     const title = product
       ? `${product.name} — Northlane Workspace`
       : "Product Not Found — Northlane Workspace";
+
+    const jsonLdProduct = product
+      ? {
+          "@context": "https://schema.org/",
+          "@type": "Product",
+          name: product.name,
+          image: [product.img],
+          description: product.description,
+          sku: product.id,
+          brand: {
+            "@type": "Brand",
+            name: product.brand || "Northlane",
+          },
+          offers: {
+            "@type": "Offer",
+            url: `https://northlane.studio/products/${product.id}`,
+            priceCurrency: "USD",
+            price: product.price,
+            availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          },
+        }
+      : null;
+
     return {
       meta: [
         { title },
@@ -49,6 +72,14 @@ export const Route = createFileRoute("/products/$productId")({
           content: product?.description || "Explore Northlane studio workspace products.",
         },
       ],
+      scripts: jsonLdProduct
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify(jsonLdProduct),
+            },
+          ]
+        : [],
     };
   },
   component: ProductDetailsPage,
