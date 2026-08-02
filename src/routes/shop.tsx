@@ -244,15 +244,24 @@ function ShopPage() {
                   Sign In
                 </Link>
               ) : (
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
-                  }}
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
-                >
-                  Sign Out
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/account"
+                    className="ml-1 relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs"
+                    aria-label="Account Portal"
+                    title="Account Portal"
+                  >
+                    {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
+                      <img
+                        src={user.user_metadata.avatar_url || user.user_metadata.picture}
+                        alt="User Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
+                  </Link>
+                </div>
               )}
 
               <button

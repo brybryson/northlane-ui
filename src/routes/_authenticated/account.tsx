@@ -148,10 +148,18 @@ function AccountLayout() {
 
               <Link
                 to="/account"
-                className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer"
+                className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden"
                 aria-label="Account"
               >
-                <User className="h-4 w-4" />
+                {authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture ? (
+                  <img
+                    src={authUser.user_metadata.avatar_url || authUser.user_metadata.picture}
+                    alt="User Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
               </Link>
             </div>
           </div>
@@ -161,9 +169,17 @@ function AccountLayout() {
         <section className="bg-surface border-b border-hairline py-6 sm:py-10">
           <div className="container-editorial">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-foreground text-background font-bold text-2xl flex items-center justify-center shadow-xs border border-hairline shrink-0">
-                {fullName.charAt(0).toUpperCase()}
-              </div>
+              {authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture ? (
+                <img
+                  src={authUser.user_metadata.avatar_url || authUser.user_metadata.picture}
+                  alt="User Profile"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-xs border border-hairline shrink-0"
+                />
+              ) : (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-foreground text-background font-bold text-2xl flex items-center justify-center shadow-xs border border-hairline shrink-0">
+                  {fullName.charAt(0).toUpperCase()}
+                </div>
+              )}
               <div>
                 <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
                   Customer Portal

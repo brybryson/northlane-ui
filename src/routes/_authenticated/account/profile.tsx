@@ -25,10 +25,17 @@ function ProfilePage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
 
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [googlePhotoUrl, setGooglePhotoUrl] = useState<string>("");
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setAuthUser(data.user);
+        const gPhoto = data.user.user_metadata?.picture || data.user.user_metadata?.avatar_url || "";
+        const customAvatar = data.user.user_metadata?.avatar_url || gPhoto;
+        setGooglePhotoUrl(gPhoto);
+        setAvatarUrl(customAvatar);
         if (data.user.email) {
           const emailName = data.user.email.split("@")[0];
           setFullName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
@@ -36,6 +43,45 @@ function ProfilePage() {
       }
     });
   }, []);
+
+  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image file size must be under 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Url = reader.result as string;
+      setAvatarUrl(base64Url);
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_url: base64Url },
+      });
+      if (error) {
+        toast.error("Failed to update profile photo.");
+      } else {
+        toast.success("Profile photo updated successfully!");
+        window.location.reload();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResetToGooglePhoto = async () => {
+    if (!googlePhotoUrl) {
+      toast.info("No Google profile photo linked to this account.");
+      return;
+    }
+    setAvatarUrl(googlePhotoUrl);
+    await supabase.auth.updateUser({
+      data: { avatar_url: googlePhotoUrl },
+    });
+    toast.success("Profile picture reset to Google photo!");
+    window.location.reload();
+  };
 
   const handleOpenConfirmModal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +141,44 @@ function ProfilePage() {
             <User className="w-4 h-4 text-accent" />
             Personal Information
           </h3>
+
+          {/* Profile Photo Uploader */}
+          <div className="p-4 rounded-xl bg-surface/50 border border-hairline flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-foreground text-background font-bold text-xl flex items-center justify-center border border-hairline shrink-0 shadow-xs">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span>{fullName.charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+
+            <div className="space-y-2 text-center sm:text-left flex-1">
+              <span className="text-xs font-bold text-foreground block">Profile Photo</span>
+              <p className="text-[11px] text-muted-foreground">
+                Upload a custom profile image or sync directly with your Gmail / Google account.
+              </p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                <label className="px-3.5 py-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
+                  <span>Upload Photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileUpload}
+                    className="hidden"
+                  />
+                </label>
+                {googlePhotoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleResetToGooglePhoto}
+                    className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
+                  >
+                    Use Google Photo
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div>
             <label className="text-xs text-muted-foreground block mb-1 font-semibold">Full Name</label>
