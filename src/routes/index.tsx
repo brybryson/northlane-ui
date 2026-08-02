@@ -35,6 +35,7 @@ import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
+import { AISetupStager } from "@/components/AISetupStager";
 import { useCart } from "@/context/cart-context";
 
 import heroWorkspace from "@/assets/hero-workspace.jpg";
@@ -1596,6 +1597,7 @@ function Landing() {
         <Hero onAddToCart={handleAddToCart} />
         <Trusted />
         <Collections />
+        <AISetupStager />
         <Featured
           onAddToCart={handleAddToCart}
           onToggleWishlist={handleToggleWishlist}
