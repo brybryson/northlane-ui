@@ -41,7 +41,7 @@ function AccountDashboardPage() {
     {
       title: "Saved Shipping Addresses",
       description: "Manage default shipping and billing destinations for 1-click checkout.",
-      href: "/account/addresses",
+      href: "/account/profile",
       icon: MapPin,
       badge: "2 Saved Locations",
     },

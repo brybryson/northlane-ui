@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { User, Lock, Check, KeyRound, AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SavedAddressesSection } from "@/components/account/SavedAddressesSection";
 
 export const Route = createFileRoute("/_authenticated/account/profile")({
   head: () => ({
@@ -303,6 +304,9 @@ function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Saved Shipping Addresses Section */}
+      <SavedAddressesSection />
 
       {/* Confirmation Modal for Profile Update */}
       {showConfirmModal && (
