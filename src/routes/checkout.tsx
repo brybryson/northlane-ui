@@ -55,6 +55,32 @@ function CheckoutPage() {
     nameOnCard: "Alex Morgan",
   });
 
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:3000/api/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.addresses && data.addresses.length > 0) {
+          setSavedAddresses(data.addresses);
+          const defaultAddr = data.addresses.find((a: any) => a.isDefault) || data.addresses[0];
+          if (defaultAddr) {
+            setShippingInfo({
+              firstName: defaultAddr.recipientName.split(" ")[0] || "Vrsnmllz03",
+              lastName: defaultAddr.recipientName.split(" ")[1] || "",
+              email: "vrsnmllz03@gmail.com",
+              address: defaultAddr.streetAddress + (defaultAddr.aptSuite ? `, ${defaultAddr.aptSuite}` : ""),
+              city: defaultAddr.city,
+              state: defaultAddr.state,
+              zip: defaultAddr.zipCode,
+              country: defaultAddr.country || "United States",
+            });
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const shippingCost = shippingMethod === "standard" ? 0 : shippingMethod === "express" ? 15 : 30;
   const grandTotal = total + shippingCost;
 
