@@ -46,7 +46,7 @@ const WELCOME_MESSAGE: Message = {
 };
 
 const SUGGESTIONS = [
-  "I need a quiet keyboard under ₱6,000",
+  "I need a quiet keyboard under $250",
   "Recommend an ergonomic setup for coding",
   "Do you have video editing monitors?",
   "What is your return policy?",
@@ -184,7 +184,7 @@ export function AIShoppingAssistant({
       const isChair =
         lower.includes("chair") || lower.includes("seating") || lower.includes("sit");
 
-      const budgetMatch = lower.match(/(?:under|below|budget of|max|price of|₱|p)\s*([\d,]+)/i);
+      const budgetMatch = lower.match(/(?:under|below|budget of|max|price of|\$|p)\s*([\d,]+)/i);
       const budgetMax = budgetMatch ? parseInt(budgetMatch[1].replace(/,/g, "")) : Infinity;
 
       if (isKeyboard) {
@@ -194,7 +194,7 @@ export function AIShoppingAssistant({
         reply =
           matched.length > 0
             ? `I've found ${matched.length} mechanical keyboard(s) designed for silent, focused typing. Here are my recommendations:`
-            : `I see you are looking for keyboards under ₱${budgetMax.toLocaleString()}, but we don't have matches in that exact price range right now. Here are other options in stock:`;
+            : `I see you are looking for keyboards under $${budgetMax.toLocaleString()}, but we don't have matches in that exact price range right now. Here are other options in stock:`;
         if (matched.length === 0)
           matched = CATALOG_PRODUCTS.filter((p) => p.category.toLowerCase().includes("keyboard"));
       } else if (isMouse) {
@@ -424,7 +424,7 @@ export function AIShoppingAssistant({
                           </h4>
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-xs font-bold text-foreground">
-                              ₱{product.price.toLocaleString()}
+                              ${product.price.toLocaleString()}
                             </span>
                             <span className="flex items-center gap-0.5 text-[10px] text-amber-500 font-bold">
                               ★ {product.rating}

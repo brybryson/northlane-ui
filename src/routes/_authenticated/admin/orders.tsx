@@ -91,66 +91,66 @@ const MOCK_ORDERS: Order[] = [
     assignedStaff: "Ana Cruz", carrier: "LBC Express", trackingNumber: undefined,
     timeline: [
       { time: "10:31 AM", label: "Order Placed", by: "Marcus Reyes", type: "info" },
-      { time: "10:33 AM", label: "Payment Confirmed ₱31,290", by: "Stripe", type: "success" },
+      { time: "10:33 AM", label: "Payment Confirmed $312.90", by: "Stripe", type: "success" },
       { time: "10:34 AM", label: "Inventory Reserved (3 items)", by: "System", type: "system" },
       { time: "10:50 AM", label: "Assigned to Ana Cruz", by: "Admin", type: "info" },
     ],
-    requests: [], aiInsights: ["Returning VIP Customer", "High Lifetime Value (₱42,850)", "Frequently Purchases Accessories", "Low Refund Risk"],
+    requests: [], aiInsights: ["Returning VIP Customer", "High Lifetime Value ($428.50)", "Frequently Purchases Accessories", "Low Refund Risk"],
   },
   {
-    id: "#NL-1041", customer: "Sofia Tan", email: "sofia.tan@example.com", phone: "+63 918 234 5678",
-    customerSince: "Mar 2025", totalOrders: 2, lifetimeValue: 8900, tags: ["New"],
-    shippingAddress: "Unit 4F, One Shangri-La Place, Mandaluyong, 1550",
-    billingAddress: "Unit 4F, One Shangri-La Place, Mandaluyong, 1550",
+    id: "#NL-1041", customer: "Sofia Tan", email: "sofia.tan@example.com", phone: "+1 415 234 5678",
+    customerSince: "Mar 2025", totalOrders: 2, lifetimeValue: 190, tags: ["New"],
+    shippingAddress: "742 Evergreen Terrace, San Francisco, CA 94107",
+    billingAddress: "742 Evergreen Terrace, San Francisco, CA 94107",
     paymentStatus: "Paid", fulfillmentStatus: "Pending",
     items: [
-      { id: "ms-01", name: "Logitech MX Master 3S", sku: "MS-01", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80", qty: 1, unitPrice: 5200, discount: 0 },
+      { id: "ms-01", name: "Logitech MX Master 3S", sku: "MS-01", image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=80", qty: 1, unitPrice: 99, discount: 0 },
     ],
-    shipping: 150, tax: 312, discount: 0, date: "Today, 09:12 AM", priority: "Normal",
+    shipping: 15, tax: 8, discount: 0, date: "Today, 09:12 AM", priority: "Normal",
     assignedStaff: "—",
     timeline: [
       { time: "09:12 AM", label: "Order Placed", by: "Sofia Tan", type: "info" },
-      { time: "09:13 AM", label: "Payment Confirmed ₱5,662", by: "GCash", type: "success" },
+      { time: "09:13 AM", label: "Payment Confirmed $122.00", by: "Stripe", type: "success" },
     ],
     requests: [], aiInsights: ["New Customer — 2nd Order", "Suggest Welcome Loyalty Offer", "Standard Refund Risk"],
   },
   {
-    id: "#NL-1040", customer: "Daniel Lim", email: "d.lim@example.com", phone: "+63 920 345 6789",
-    customerSince: "Aug 2023", totalOrders: 14, lifetimeValue: 98200, tags: ["VIP", "Studio Pro"],
-    shippingAddress: "33 Salcedo St, Makati CBD, Makati, 1227",
-    billingAddress: "33 Salcedo St, Makati CBD, Makati, 1227",
+    id: "#NL-1040", customer: "Daniel Lim", email: "d.lim@example.com", phone: "+1 415 345 6789",
+    customerSince: "Aug 2023", totalOrders: 14, lifetimeValue: 2450, tags: ["VIP", "Studio Pro"],
+    shippingAddress: "120 Market St, Suite 400, San Francisco, CA 94105",
+    billingAddress: "120 Market St, Suite 400, San Francisco, CA 94105",
     paymentStatus: "Paid", fulfillmentStatus: "Shipped",
     items: [
-      { id: "dk-01", name: "Northlane Lift Standing Desk", sku: "DK-01", image: "https://images.unsplash.com/photo-1593642534315-48ec5d3d4124?w=80", qty: 1, unitPrice: 45000, discount: 3000 },
+      { id: "dk-01", name: "Northlane Lift Standing Desk", sku: "DK-01", image: "https://images.unsplash.com/photo-1593642534315-48ec5d3d4124?w=80", qty: 1, unitPrice: 750, discount: 50 },
     ],
-    shipping: 0, tax: 2520, discount: 3000, date: "Yesterday, 4:45 PM", priority: "High",
-    assignedStaff: "Ben Santos", carrier: "J&T Express", trackingNumber: "JT-PH-9928371",
+    shipping: 0, tax: 60, discount: 50, date: "Yesterday, 4:45 PM", priority: "High",
+    assignedStaff: "Ben Santos", carrier: "FedEx Express", trackingNumber: "FX-US-9928371",
     timeline: [
       { time: "Yesterday 4:45 PM", label: "Order Placed", by: "Daniel Lim", type: "info" },
-      { time: "Yesterday 4:46 PM", label: "Payment Confirmed ₱44,520", by: "Stripe", type: "success" },
+      { time: "Yesterday 4:46 PM", label: "Payment Confirmed $760.00", by: "Stripe", type: "success" },
       { time: "Yesterday 5:00 PM", label: "Packing Started", by: "Ben Santos", type: "info" },
-      { time: "Yesterday 7:30 PM", label: "Tracking Generated: JT-PH-9928371", by: "System", type: "system" },
-      { time: "Today 8:00 AM", label: "Order Handed to J&T Express", by: "Ben Santos", type: "success" },
+      { time: "Yesterday 7:30 PM", label: "Tracking Generated: FX-US-9928371", by: "System", type: "system" },
+      { time: "Today 8:00 AM", label: "Order Handed to FedEx Express", by: "Ben Santos", type: "success" },
     ],
     requests: [], aiInsights: ["Studio Pro Member", "14 Lifetime Orders", "Bundle Recommendation Accepted (3×)", "Eligible for Priority Handling"],
   },
   {
-    id: "#NL-1039", customer: "Isabella Ramos", email: "i.ramos@example.com", phone: "+63 915 456 7890",
-    customerSince: "Nov 2024", totalOrders: 3, lifetimeValue: 12400, tags: [],
-    shippingAddress: "Blk 7 Lot 12, Sta. Rosa Laguna, 4026",
-    billingAddress: "Blk 7 Lot 12, Sta. Rosa Laguna, 4026",
+    id: "#NL-1039", customer: "Isabella Ramos", email: "i.ramos@example.com", phone: "+1 415 456 7890",
+    customerSince: "Nov 2024", totalOrders: 3, lifetimeValue: 420, tags: [],
+    shippingAddress: "450 Sutter St, San Francisco, CA 94108",
+    billingAddress: "450 Sutter St, San Francisco, CA 94108",
     paymentStatus: "Refunded", fulfillmentStatus: "Completed",
     items: [
-      { id: "au-02", name: "Sony WH-1000XM5", sku: "AU-02", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=80", qty: 1, unitPrice: 18500, discount: 0 },
+      { id: "au-02", name: "Sony WH-1000XM5", sku: "AU-02", image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=80", qty: 1, unitPrice: 380, discount: 0 },
     ],
-    shipping: 0, tax: 1110, discount: 0, date: "Yesterday, 2:30 PM", priority: "Low",
+    shipping: 0, tax: 30, discount: 0, date: "Yesterday, 2:30 PM", priority: "Low",
     assignedStaff: "Ana Cruz",
     timeline: [
       { time: "Yesterday 2:30 PM", label: "Order Placed", by: "Isabella Ramos", type: "info" },
-      { time: "Yesterday 2:31 PM", label: "Payment Confirmed ₱19,610", by: "GCash", type: "success" },
+      { time: "Yesterday 2:31 PM", label: "Payment Confirmed $410.00", by: "Stripe", type: "success" },
       { time: "Yesterday 6:00 PM", label: "Return Requested — Defective Unit", by: "Isabella Ramos", type: "warning" },
       { time: "Yesterday 6:30 PM", label: "Return Approved", by: "Ana Cruz", type: "info" },
-      { time: "Today 9:00 AM", label: "Refund Processed ₱19,610", by: "System", type: "success" },
+      { time: "Today 9:00 AM", label: "Refund Processed $410.00", by: "System", type: "success" },
     ],
     requests: [
       { type: "Return Request", requestedBy: "Isabella Ramos", date: "Yesterday 6:00 PM", reason: "Unit arrived with crackling in left earcup.", status: "Approved" },
@@ -187,27 +187,27 @@ const MOCK_ORDERS: Order[] = [
     assignedStaff: "Ben Santos", carrier: "LBC Express",
     timeline: [
       { time: "May 14, 9:00 AM", label: "Order Placed", by: "Chloe Aquino", type: "info" },
-      { time: "May 14, 9:02 AM", label: "Payment Confirmed ₱24,380", by: "Stripe", type: "success" },
+      { time: "May 14, 9:02 AM", label: "Payment Confirmed $243.80", by: "Stripe", type: "success" },
       { time: "May 14, 2:00 PM", label: "Packed & Ready for Pickup", by: "Ben Santos", type: "success" },
     ],
     requests: [], aiInsights: ["Returning Customer (5 Orders)", "Accessories Upsell Opportunity", "Preferred Carrier: LBC"],
   },
   {
-    id: "#NL-1036", customer: "Ethan dela Cruz", email: "ethan.dc@example.com", phone: "+63 919 789 0123",
-    customerSince: "Sep 2023", totalOrders: 9, lifetimeValue: 61000, tags: ["VIP"],
-    shippingAddress: "The Residences at Greenbelt, Makati, 1223",
-    billingAddress: "The Residences at Greenbelt, Makati, 1223",
+    id: "#NL-1036", customer: "Ethan dela Cruz", email: "ethan.dc@example.com", phone: "+1 415 789 0123",
+    customerSince: "Sep 2023", totalOrders: 9, lifetimeValue: 1250, tags: ["VIP"],
+    shippingAddress: "555 California St, San Francisco, CA 94104",
+    billingAddress: "555 California St, San Francisco, CA 94104",
     paymentStatus: "Paid", fulfillmentStatus: "Delivered",
     items: [
-      { id: "ch-01", name: "HM Embody Chair", sku: "CH-01", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=80", qty: 1, unitPrice: 62000, discount: 5000 },
+      { id: "ch-01", name: "HM Embody Chair", sku: "CH-01", image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=80", qty: 1, unitPrice: 1200, discount: 100 },
     ],
-    shipping: 0, tax: 3420, discount: 5000, date: "May 12, 2025", priority: "High",
-    assignedStaff: "Ana Cruz", carrier: "Transportify",
+    shipping: 0, tax: 88, discount: 100, date: "May 12, 2025", priority: "High",
+    assignedStaff: "Ana Cruz", carrier: "FedEx Express",
     timeline: [
       { time: "May 12, 3:00 PM", label: "Order Placed", by: "Ethan dela Cruz", type: "info" },
-      { time: "May 12, 3:02 PM", label: "Payment Confirmed ₱60,420", by: "Stripe", type: "success" },
-      { time: "May 13, 9:00 AM", label: "Dispatched via Transportify", by: "System", type: "system" },
-      { time: "May 13, 2:30 PM", label: "Delivered & Signed", by: "Transportify", type: "success" },
+      { time: "May 12, 3:02 PM", label: "Payment Confirmed $1,188.00", by: "Stripe", type: "success" },
+      { time: "May 13, 9:00 AM", label: "Dispatched via FedEx Express", by: "System", type: "system" },
+      { time: "May 13, 2:30 PM", label: "Delivered & Signed", by: "FedEx Express", type: "success" },
     ],
     requests: [], aiInsights: ["VIP — 9 Lifetime Orders", "Likely to Purchase Studio Upgrade Bundle", "No Refund History"],
   },
@@ -421,7 +421,7 @@ function OrderDetail({ order, onBack }: { order: Order; onBack: () => void }) {
             <div className="space-y-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 shrink-0" />{order.email}</div>
               <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 shrink-0" />{order.phone}</div>
-              <div className="flex items-center gap-2 font-semibold text-foreground"><DollarSign className="h-3.5 w-3.5 shrink-0" />₱{order.lifetimeValue.toLocaleString()} lifetime</div>
+              <div className="flex items-center gap-2 font-semibold text-foreground"><DollarSign className="h-3.5 w-3.5 shrink-0" />${order.lifetimeValue.toLocaleString()} lifetime</div>
             </div>
             {order.tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
@@ -477,21 +477,21 @@ function OrderDetail({ order, onBack }: { order: Order; onBack: () => void }) {
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{item.name}</div>
                     <div className="text-[11px] font-mono text-muted-foreground">{item.sku}</div>
-                    {item.discount > 0 && <div className="text-[10px] text-accent font-semibold mt-0.5">−₱{item.discount.toLocaleString()} discount</div>}
+                    {item.discount > 0 && <div className="text-[10px] text-accent font-semibold mt-0.5">−${item.discount.toLocaleString()} discount</div>}
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-xs text-muted-foreground">×{item.qty}</div>
-                    <div className="font-semibold text-sm tabular-nums">₱{((item.unitPrice * item.qty) - item.discount).toLocaleString()}</div>
+                    <div className="font-semibold text-sm tabular-nums">${((item.unitPrice * item.qty) - item.discount).toLocaleString()}</div>
                   </div>
                 </div>
               ))}
             </div>
             <div className="px-5 py-4 border-t border-hairline bg-surface/40 space-y-2 text-sm">
-              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">₱{subtotal.toLocaleString()}</span></div>
-              {order.discount > 0 && <div className="flex justify-between text-accent"><span>Discount</span><span className="tabular-nums">−₱{order.discount.toLocaleString()}</span></div>}
-              <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span className="tabular-nums">{order.shipping === 0 ? "Free" : `₱${order.shipping.toLocaleString()}`}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>Tax (12%)</span><span className="tabular-nums">₱{order.tax.toLocaleString()}</span></div>
-              <div className="flex justify-between font-bold text-base border-t border-hairline pt-2 mt-1"><span>Total</span><span className="tabular-nums headline">₱{grand.toLocaleString()}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">${subtotal.toLocaleString()}</span></div>
+              {order.discount > 0 && <div className="flex justify-between text-accent"><span>Discount</span><span className="tabular-nums">−${order.discount.toLocaleString()}</span></div>}
+              <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span className="tabular-nums">{order.shipping === 0 ? "Free" : `$${order.shipping.toLocaleString()}`}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Tax (8%)</span><span className="tabular-nums">${order.tax.toLocaleString()}</span></div>
+              <div className="flex justify-between font-bold text-base border-t border-hairline pt-2 mt-1"><span>Total</span><span className="tabular-nums headline">${grand.toLocaleString()}</span></div>
             </div>
           </div>
 
@@ -598,7 +598,7 @@ function OrderDetail({ order, onBack }: { order: Order; onBack: () => void }) {
               { icon: <FileText className="h-4 w-4" />,    label: "Print Invoice",          fn: () => window.print() },
               { icon: <User className="h-4 w-4" />,        label: "Assign Staff",           fn: () => ask("Assign Staff", "Reassign this order to a staff member?", "Confirm", false, () => {}) },
               { icon: <Mail className="h-4 w-4" />,        label: "Contact Customer",       fn: () => window.open(`mailto:${order.email}`) },
-              { icon: <RotateCcw className="h-4 w-4" />,   label: "Process Refund",         fn: () => ask("Process Refund", `Refund ₱${grand.toLocaleString()} to ${order.customer}?`, "Refund", true, () => {}) },
+              { icon: <RotateCcw className="h-4 w-4" />,   label: "Process Refund",         fn: () => ask("Process Refund", `Refund $${grand.toLocaleString()} to ${order.customer}?`, "Refund", true, () => {}) },
               { icon: <Ban className="h-4 w-4" />,         label: "Cancel Order",           fn: () => ask("Cancel Order", `Cancel ${order.id}? This will release reserved inventory.`, "Cancel Order", true, () => {}) },
             ].map(({ icon, label, fn }) => (
               <button key={label} onClick={fn} className="flex items-center gap-3 w-full rounded-xl px-3.5 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors text-left group">
@@ -834,7 +834,7 @@ function OrdersPage() {
                       <Badge className={FULFILLMENT_BADGE[order.fulfillmentStatus]}>{order.fulfillmentStatus}</Badge>
                     </td>
                     <td className="px-5 py-3.5 text-sm text-muted-foreground">{itemCount} item{itemCount !== 1 ? "s" : ""}</td>
-                    <td className="px-5 py-3.5 font-semibold tabular-nums text-sm">₱{grand.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 font-semibold tabular-nums text-sm">${grand.toLocaleString()}</td>
                     <td className="px-5 py-3.5 text-xs text-muted-foreground whitespace-nowrap">{order.date}</td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs font-bold ${PRIORITY_BADGE[order.priority]}`}>{order.priority}</span>

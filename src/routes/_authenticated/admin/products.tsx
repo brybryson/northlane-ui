@@ -341,10 +341,10 @@ function ProductsManagerPage() {
                   </td>
                   {/* Price */}
                   <td className="px-5 py-3.5 text-right">
-                    <div className="font-semibold tabular-nums">₱{p.price.toLocaleString()}</div>
+                    <div className="font-semibold tabular-nums">${p.price.toLocaleString()}</div>
                     {p.original_price && (
                       <div className="text-[11px] text-muted-foreground line-through tabular-nums">
-                        ₱{p.original_price.toLocaleString()}
+                        ${p.original_price.toLocaleString()}
                       </div>
                     )}
                   </td>
@@ -565,17 +565,17 @@ function ProductModal({
           {/* SECTION: Pricing & Stock */}
           <Section title="Pricing & Stock">
             <div className="grid grid-cols-3 gap-4">
-              <Field label="Price (₱)">
+              <Field label="Price ($)">
                 <input
                   type="number"
                   value={row.price || ""}
                   onChange={(e) => setRow({ ...row, price: Number(e.target.value) })}
                   className="field-input tabular-nums"
-                  placeholder="4850"
+                  placeholder="245"
                   required
                 />
               </Field>
-              <Field label="Original Price (₱)">
+              <Field label="Original Price ($)">
                 <input
                   type="number"
                   value={row.original_price || ""}

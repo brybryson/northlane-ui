@@ -76,7 +76,7 @@ function CartPage() {
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
 
   function formatPrice(amount: number): string {
-    return `₱${amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   function handleAIAssistantAddToCart(p: any) {
@@ -425,14 +425,14 @@ function CartPage() {
                     <div className="flex justify-between text-muted-foreground text-xs">
                       <span>Estimated Shipping</span>
                       <span className="font-semibold text-foreground">
-                        {remainingForFreeShipping === 0 ? "FREE" : "₱500.00"}
+                        {remainingForFreeShipping === 0 ? "FREE" : "$15.00"}
                       </span>
                     </div>
 
                     <div className="border-t border-hairline pt-3 flex justify-between text-base font-bold text-foreground">
                       <span>Estimated Total</span>
                       <span className="text-lg text-foreground">
-                        {formatPrice(total + (remainingForFreeShipping === 0 ? 0 : 500))}
+                        {formatPrice(total + (remainingForFreeShipping === 0 ? 0 : 15))}
                       </span>
                     </div>
                   </div>

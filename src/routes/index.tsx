@@ -506,7 +506,7 @@ function Hero({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
             </div>
             <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
               <span>7 studio pieces included</span>
-              <span className="font-bold text-foreground">from ₱64,950</span>
+              <span className="font-bold text-foreground">from $1,250</span>
             </div>
           </div>
         </div>
@@ -818,7 +818,7 @@ function Featured({
                     <div>
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="text-[15px] font-medium leading-tight">{p.name}</h3>
-                        <div className="text-[15px] font-semibold">₱{p.price.toLocaleString()}</div>
+                        <div className="text-[15px] font-semibold">${p.price.toLocaleString()}</div>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{p.subtitle}</p>
                     </div>
@@ -878,9 +878,8 @@ function Featured({
                   <div className="eyebrow mb-2">{quickViewProduct.category}</div>
                   <h3 className="text-2xl font-bold">{quickViewProduct.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{quickViewProduct.subtitle}</p>
-                  <div className="mt-4 text-2xl font-semibold">${quickViewProduct.price}</div>
                   <div className="mt-4 text-2xl font-semibold">
-                    ₱{quickViewProduct.price.toLocaleString()}
+                    ${quickViewProduct.price.toLocaleString()}
                   </div>
 
                   <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
@@ -890,7 +889,7 @@ function Featured({
                   <div className="mt-4 space-y-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-emerald-600" /> Free express delivery on orders
-                      over ₱5,000
+                      over $100
                     </div>
                   </div>
 
@@ -902,7 +901,7 @@ function Featured({
                       }}
                       className="w-full rounded-full py-3 text-xs font-semibold"
                     >
-                      <ShoppingBag className="h-4 w-4" /> Add to Bag · ₱
+                      <ShoppingBag className="h-4 w-4" /> Add to Bag · $
                       {quickViewProduct.price.toLocaleString()}
                     </Button>
                   </div>
@@ -1146,7 +1145,7 @@ function StudioConcierge({ onAddToCart }: { onAddToCart: (p: ProductItem) => voi
                       <p className="mt-1 text-xs text-muted-foreground font-normal">{p.subtitle}</p>
                     </div>
                     <div className="text-base font-bold text-foreground">
-                      ₱{p.price.toLocaleString()}
+                      ${p.price.toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -1180,7 +1179,7 @@ function Builder({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
   const [active, setActive] = useState(0);
   const setups = [
     {
-      total: 32400,
+      total: 650,
       items: [
         "Focus Desk Walnut",
         "Aster 65 Keyboard",
@@ -1192,7 +1191,7 @@ function Builder({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
       img: lifestyleDeveloper,
     },
     {
-      total: 41800,
+      total: 890,
       items: [
         '27" 5K Studio Display',
         "Wacom Pro Tablet",
@@ -1204,7 +1203,7 @@ function Builder({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
       img: lifestyleDesigner,
     },
     {
-      total: 14900,
+      total: 320,
       items: [
         "Compact Desk",
         "Nordic Wireless Mouse",
@@ -1215,7 +1214,7 @@ function Builder({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
       img: lifestyleHome,
     },
     {
-      total: 56200,
+      total: 1250,
       items: [
         "4K Camera System",
         "Studio Microphone",
@@ -1227,7 +1226,7 @@ function Builder({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
       img: lifestyleDesigner,
     },
     {
-      total: 23800,
+      total: 480,
       items: [
         "Laptop Stand",
         "Aster 65 Keyboard",
@@ -1284,7 +1283,7 @@ function Builder({ onAddToCart }: { onAddToCart: (p: ProductItem) => void }) {
               <div className="eyebrow mb-2">{profiles[active]} Setup</div>
               <div className="text-2xl font-bold">Estimated Investment</div>
               <div className="mt-2 text-5xl font-semibold tracking-tight text-foreground">
-                ₱{cur.total.toLocaleString()}
+                ${cur.total.toLocaleString()}
               </div>
 
               <div className="my-6 h-px w-full bg-hairline" />

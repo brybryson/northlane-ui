@@ -437,7 +437,7 @@ function ShopPage() {
               {/* Max Price Range Slider */}
               <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-hairline pt-2 sm:pt-0 sm:pl-3 w-full sm:w-auto justify-between sm:justify-start">
                 <span className="text-[11px] sm:text-xs">
-                  Max: <strong className="text-foreground">₱{maxPrice.toLocaleString()}</strong>
+                  Max: <strong className="text-foreground">${maxPrice.toLocaleString()}</strong>
                 </span>
                 <input
                   type="range"
@@ -583,11 +583,11 @@ function ShopPage() {
                   <div className="mt-3 sm:mt-5 border-t border-hairline pt-3 flex items-center justify-between">
                     <div>
                       <div className="text-xs sm:text-lg font-bold text-foreground">
-                        ₱{p.price.toLocaleString()}
+                        ${p.price.toLocaleString()}
                       </div>
                       {p.originalPrice && (
                         <div className="text-[10px] sm:text-xs text-muted-foreground line-through">
-                          ₱{p.originalPrice.toLocaleString()}
+                          ${p.originalPrice.toLocaleString()}
                         </div>
                       )}
                     </div>
@@ -655,11 +655,11 @@ function ShopPage() {
 
                   <div className="mt-3 flex items-baseline gap-3">
                     <span className="text-2xl font-bold text-foreground">
-                      ₱{quickViewProduct.price.toLocaleString()}
+                      ${quickViewProduct.price.toLocaleString()}
                     </span>
                     {quickViewProduct.originalPrice && (
                       <span className="text-xs text-muted-foreground line-through">
-                        ₱{quickViewProduct.originalPrice.toLocaleString()}
+                        ${quickViewProduct.originalPrice.toLocaleString()}
                       </span>
                     )}
                   </div>
@@ -700,7 +700,7 @@ function ShopPage() {
                       }}
                       className="flex-1 rounded-full py-5 text-xs font-bold shadow-md"
                     >
-                      <ShoppingBag className="h-4 w-4 mr-1.5" /> Add · ₱
+                      <ShoppingBag className="h-4 w-4 mr-1.5" /> Add · $
                       {(quickViewProduct.price * modalQuantity).toLocaleString()}
                     </Button>
                     <Link

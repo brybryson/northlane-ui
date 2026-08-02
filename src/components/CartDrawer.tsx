@@ -90,7 +90,7 @@ const CartDrawerItem: React.FC<{
           </div>
 
           <div className="text-sm font-bold text-foreground tracking-tight">
-            ₱{(item.price * item.quantity).toLocaleString()}
+            ${(item.price * item.quantity).toLocaleString()}
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@ export const CartDrawer: React.FC = () => {
           <div className="flex justify-between items-center text-xs">
             {remainingForFreeShipping > 0 ? (
               <span className="text-muted-foreground">
-                Add <span className="text-foreground font-semibold">₱{remainingForFreeShipping.toLocaleString()}</span> more for <span className="text-foreground font-semibold">Free Express Delivery</span>
+                Add <span className="text-foreground font-semibold">${remainingForFreeShipping.toLocaleString()}</span> more for <span className="text-foreground font-semibold">Free Express Delivery</span>
               </span>
             ) : (
               <span className="text-foreground font-semibold flex items-center gap-1.5">
@@ -194,7 +194,7 @@ export const CartDrawer: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>Subtotal</span>
-                <span className="text-base font-bold text-foreground">₱{subtotal.toLocaleString()}</span>
+                <span className="text-base font-bold text-foreground">${subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground">
                 <span>Shipping</span>

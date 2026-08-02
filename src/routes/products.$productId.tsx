@@ -414,11 +414,11 @@ function ProductDetailsPage() {
                 {/* Price Display */}
                 <div className="mt-5 flex items-baseline gap-3">
                   <span className="text-2xl sm:text-3xl font-bold text-foreground">
-                    ₱{product.price.toLocaleString()}
+                    ${product.price.toLocaleString()}
                   </span>
                   {product.originalPrice && (
                     <span className="text-sm sm:text-lg text-muted-foreground line-through">
-                      ₱{product.originalPrice.toLocaleString()}
+                      ${product.originalPrice.toLocaleString()}
                     </span>
                   )}
                   <span className="text-xs text-muted-foreground">Free Express Delivery</span>
@@ -475,7 +475,7 @@ function ProductDetailsPage() {
                     onClick={() => handleAddToCart(product, quantity)}
                     className="flex-1 rounded-full py-5 sm:py-6 text-xs sm:text-sm font-bold shadow-md cursor-pointer"
                   >
-                    <ShoppingBag className="h-4 w-4 mr-2" /> Add to Studio Bag · ₱
+                    <ShoppingBag className="h-4 w-4 mr-2" /> Add to Studio Bag · $
                     {(product.price * quantity).toLocaleString()}
                   </Button>
 
@@ -585,7 +585,7 @@ function ProductDetailsPage() {
                         {product.name} (This Item)
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        ₱{product.price.toLocaleString()}
+                        ${product.price.toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -621,7 +621,7 @@ function ProductDetailsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold text-foreground">{item.name}</div>
                           <div className="text-xs text-muted-foreground">
-                            {item.subtitle} · ₱{item.price.toLocaleString()}
+                            {item.subtitle} · ${item.price.toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -633,7 +633,7 @@ function ProductDetailsPage() {
                   <div>
                     <span className="text-xs text-muted-foreground">Combined Bundle Price:</span>
                     <div className="text-xl sm:text-2xl font-bold text-foreground">
-                      ₱{bundleTotal.toLocaleString()}
+                      ${bundleTotal.toLocaleString()}
                     </div>
                   </div>
                   <Button
