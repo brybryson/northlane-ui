@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   Menu,
   Heart,
+  User,
 } from "lucide-react";
 import { CATALOG_PRODUCTS, CatalogProduct } from "../lib/products.data";
 import { Button } from "../components/ui/button";
