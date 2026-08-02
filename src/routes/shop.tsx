@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
 
+import { useCart } from "@/context/cart-context";
+
 export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
@@ -44,6 +46,7 @@ export const Route = createFileRoute("/shop")({
 
 function ShopPage() {
   const { user } = useAuthUser();
+  const { addToCart, setIsOpen: openCartDrawer, itemCount: totalCartCount } = useCart();
   const [signUpNoticeOpen, setSignUpNoticeOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -54,11 +57,10 @@ function ShopPage() {
     "featured",
   );
   const [quickViewProduct, setQuickViewProduct] = useState<CatalogProduct | null>(null);
-  const [cartItems, setCartItems] = useState<{ product: CatalogProduct; count: number }[]>([]);
-  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [wishlistCount, setWishlistCount] = useState(2);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const wishlistCount = wishlistIds.length;
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const categories: string[] = [
@@ -90,17 +92,25 @@ function ShopPage() {
       setSignUpNoticeOpen(true);
       return;
     }
-    setCartItems((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, count: item.count + qty } : item,
-        );
-      }
-      return [...prev, { product, count: qty }];
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.img,
+      category: product.category,
+      stockCount: product.stockCount,
+      quantity: qty,
     });
-    toast.success(`Added ${qty}x ${product.name} to your studio bag.`);
-    setCartDrawerOpen(true);
+  }
+
+  function onToggleWishlist(p: CatalogProduct) {
+    if (!user) {
+      setSignUpNoticeOpen(true);
+      return;
+    }
+    setWishlistIds((prev) => 
+      prev.includes(p.id) ? prev.filter((id) => id !== p.id) : [...prev, p.id]
+    );
   }
 
   // Natural Language & Filtering Logic
@@ -152,23 +162,17 @@ function ShopPage() {
     });
   }, [searchQuery, selectedCategory, selectedPersona, selectedBadge, maxPrice, sortBy]);
 
-  const totalCartCount = cartItems.reduce((acc, i) => acc + i.count, 0);
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-accent/20">
-      <div>
-        {/* Navigation Header */}
+      {/* Navigation Header */}
         <header className="sticky top-0 z-40 border-b border-hairline bg-background/90 backdrop-blur-xl transition-all duration-300">
           <div className="container-editorial flex items-center justify-between py-3.5 sm:py-4">
             <Link
               to="/"
               className="group flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
             >
-              <span className="h-2 w-2 rounded-full bg-accent" />
+              <img src="/northlane-logo.png" alt="Northlane" className="h-8 w-8 rounded-md object-cover" />
               <span>Northlane</span>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-                Studio
-              </span>
             </Link>
 
             <nav className="hidden justify-center gap-8 lg:flex">
@@ -209,14 +213,8 @@ function ShopPage() {
                 <ArrowLeft className="h-3.5 w-3.5" /> Back Home
               </Link>
 
-              <button
-                onClick={() => {
-                  if (!user) {
-                    setSignUpNoticeOpen(true);
-                  } else {
-                    toast.info(`Wishlist contains ${wishlistCount} saved item(s)`);
-                  }
-                }}
+              <Link
+                to="/wishlist"
                 className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/30 transition cursor-pointer"
                 aria-label="Wishlist"
               >
@@ -228,10 +226,10 @@ function ShopPage() {
                     </span>
                   )}
                 </div>
-              </button>
+              </Link>
 
               <button
-                onClick={() => setCartDrawerOpen(true)}
+                onClick={() => openCartDrawer(true)}
                 className="relative flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:border-foreground/30 transition shadow-xs cursor-pointer"
               >
                 <ShoppingBag className="h-4 w-4" />
@@ -534,6 +532,20 @@ function ShopPage() {
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       />
 
+                      <button
+                        onClick={() => onToggleWishlist(p)}
+                        aria-label="Add to wishlist"
+                        className={`absolute right-2 top-2 sm:right-3 sm:top-3 grid h-7 w-7 sm:h-9 sm:w-9 place-items-center rounded-full bg-surface/90 backdrop-blur transition active:scale-90 ${
+                          wishlistIds.includes(p.id)
+                            ? "text-accent fill-accent"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Heart
+                          className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${wishlistIds.includes(p.id) ? "fill-accent text-accent" : ""}`}
+                        />
+                      </button>
+
                       {/* Quick Inspect Button */}
                       <button
                         onClick={() => {
@@ -602,7 +614,6 @@ function ShopPage() {
             </div>
           )}
         </section>
-      </div>
 
       {/* Luxury Responsive Quick View Modal */}
       {quickViewProduct && (
@@ -708,79 +719,17 @@ function ShopPage() {
         </div>
       )}
 
-      {/* Cart Drawer */}
-      {cartDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs">
-          <div className="relative h-full w-full max-w-md bg-background p-5 sm:p-6 shadow-2xl flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between border-b border-hairline pb-4">
-                <div className="flex items-center gap-2 text-base font-bold text-foreground">
-                  <ShoppingBag className="h-5 w-5 text-accent" /> Your Studio Bag
-                </div>
-                <button
-                  onClick={() => setCartDrawerOpen(false)}
-                  className="rounded-full p-1.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
 
-              {cartItems.length === 0 ? (
-                <div className="py-16 text-center text-xs text-muted-foreground">
-                  Your studio bag is currently empty.
-                </div>
-              ) : (
-                <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                  {cartItems.map(({ product, count }) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center gap-4 rounded-2xl border border-hairline bg-surface p-3"
-                    >
-                      <img
-                        src={product.img}
-                        alt={product.name}
-                        className="h-16 w-16 rounded-xl object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-bold text-foreground truncate">
-                          {product.name}
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">
-                          ₱{product.price.toLocaleString()} each
-                        </p>
-                        <div className="mt-1 text-xs font-bold text-foreground">
-                          Qty: {count} · ₱{(product.price * count).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {cartItems.length > 0 && (
-              <div className="border-t border-hairline pt-4 space-y-3">
-                <div className="flex justify-between text-sm font-bold text-foreground">
-                  <span>Subtotal</span>
-                  <span>
-                    ₱
-                    {cartItems
-                      .reduce((sum, item) => sum + item.product.price * item.count, 0)
-                      .toLocaleString()}
-                  </span>
-                </div>
-                <Button className="w-full rounded-full py-3 text-xs font-bold shadow-md">
-                  Proceed to Checkout &rarr;
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Shared Global Footer */}
       <Footer />
       <SignUpNoticeModal isOpen={signUpNoticeOpen} onClose={() => setSignUpNoticeOpen(false)} />
+      <AIShoppingAssistant
+        onAddToCart={handleAddToCart}
+        onShowSignUpNotice={() => setSignUpNoticeOpen(true)}
+        user={user}
+      />
     </div>
   );
 }
+

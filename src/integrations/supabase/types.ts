@@ -8,6 +8,38 @@ export type Database = {
   };
   public: {
     Tables: {
+      stock_adjustments: {
+        Row: {
+          id: string;
+          product_id: string;
+          adjustment_type: string;
+          quantity_change: number;
+          quantity_before: number;
+          quantity_after: number;
+          notes: string | null;
+          reference: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          adjustment_type: string;
+          quantity_change: number;
+          quantity_before: number;
+          quantity_after: number;
+          notes?: string | null;
+          reference?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          notes?: string | null;
+          reference?: string | null;
+        };
+        Relationships: [];
+      };
+
       customer_stories: {
         Row: {
           body: string | null;
@@ -95,6 +127,78 @@ export type Database = {
           id?: string;
           role?: Database["public"]["Enums"]["app_role"];
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      products: {
+        Row: {
+          id: string;
+          name: string;
+          subtitle: string;
+          category: string;
+          brand: string;
+          price: number;
+          original_price: number | null;
+          rating: number;
+          reviews_count: number;
+          image_url: string;
+          gallery: string[];
+          description: string;
+          in_stock: boolean;
+          stock_count: number;
+          featured: boolean;
+          is_new: boolean;
+          is_bestseller: boolean;
+          attributes: Json;
+          specs: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          subtitle: string;
+          category: string;
+          brand: string;
+          price: number;
+          original_price?: number | null;
+          rating?: number;
+          reviews_count?: number;
+          image_url: string;
+          gallery?: string[];
+          description: string;
+          in_stock?: boolean;
+          stock_count?: number;
+          featured?: boolean;
+          is_new?: boolean;
+          is_bestseller?: boolean;
+          attributes?: Json;
+          specs?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          subtitle?: string;
+          category?: string;
+          brand?: string;
+          price?: number;
+          original_price?: number | null;
+          rating?: number;
+          reviews_count?: number;
+          image_url?: string;
+          gallery?: string[];
+          description?: string;
+          in_stock?: boolean;
+          stock_count?: number;
+          featured?: boolean;
+          is_new?: boolean;
+          is_bestseller?: boolean;
+          attributes?: Json;
+          specs?: Json;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };

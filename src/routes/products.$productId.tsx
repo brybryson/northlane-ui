@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Star,
@@ -26,6 +26,9 @@ import { toast } from "sonner";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
+import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
+
+import { useCart } from "@/context/cart-context";
 
 export const Route = createFileRoute("/products/$productId")({
   head: ({ params }) => {
@@ -53,6 +56,7 @@ export const Route = createFileRoute("/products/$productId")({
 
 function ProductDetailsPage() {
   const { user } = useAuthUser();
+  const { addToCart, setIsOpen: openCartDrawer, itemCount } = useCart();
   const [signUpNoticeOpen, setSignUpNoticeOpen] = useState(false);
   const { productId } = Route.useParams();
   const navigate = useNavigate();
@@ -62,9 +66,71 @@ function ProductDetailsPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"specs" | "reviews" | "bundle">("specs");
-  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
-  const [wishlistCount, setWishlistCount] = useState(2);
-  const [cartItems, setCartItems] = useState<{ product: CatalogProduct; count: number }[]>([]);
+
+  const [wishlistIds, setWishlistIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("northlane_wishlist_ids");
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const wishlistCount = wishlistIds.length;
+  const isWishlisted = product ? wishlistIds.includes(product.id) : false;
+
+  useEffect(() => {
+    localStorage.setItem("northlane_wishlist_ids", JSON.stringify(wishlistIds));
+  }, [wishlistIds]);
+
+  useEffect(() => {
+    async function syncWishlist() {
+      if (!user) return;
+      try {
+        const { data, error } = await (supabase as any)
+          .from("wishlists")
+          .select("product_id")
+          .eq("user_id", user.id);
+        if (data && !error && data.length > 0) {
+          const dbIds = data.map((row: any) => row.product_id);
+          setWishlistIds((prev) => Array.from(new Set([...prev, ...dbIds])));
+        }
+      } catch (e) {
+        // Table fallback
+      }
+    }
+    syncWishlist();
+  }, [user]);
+
+  const toggleWishlist = async () => {
+    if (!user) {
+      setSignUpNoticeOpen(true);
+      return;
+    }
+    if (!product) return;
+
+    let updated: string[];
+    if (isWishlisted) {
+      updated = wishlistIds.filter((id) => id !== product.id);
+      toast.info(`Removed ${product.name} from wishlist`);
+      try {
+        await (supabase as any)
+          .from("wishlists")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("product_id", product.id);
+      } catch (e) {}
+    } else {
+      updated = [...wishlistIds, product.id];
+      toast.success(`Saved ${product.name} to wishlist!`);
+      try {
+        await (supabase as any)
+          .from("wishlists")
+          .upsert({ user_id: user.id, product_id: product.id });
+      } catch (e) {}
+    }
+    setWishlistIds(updated);
+  };
 
   const [selectedBundleIds, setSelectedBundleIds] = useState<string[]>([]);
 
@@ -93,22 +159,20 @@ function ProductDetailsPage() {
     (p) => p.id !== product.id && p.category !== product.category,
   ).slice(0, 2);
 
-  function handleAddToCart(p: CatalogProduct, qty: number = 1) {
+  function handleAddToCart(p: CatalogProduct = product!, qty: number = quantity) {
     if (!user) {
       setSignUpNoticeOpen(true);
       return;
     }
-    setCartItems((prev) => {
-      const existing = prev.find((item) => item.product.id === p.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === p.id ? { ...item, count: item.count + qty } : item,
-        );
-      }
-      return [...prev, { product: p, count: qty }];
+    addToCart({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      image: p.img,
+      category: p.category,
+      stockCount: p.stockCount,
+      quantity: qty,
     });
-    toast.success(`Added ${qty}x ${p.name} to your studio bag.`);
-    setCartDrawerOpen(true);
   }
 
   function handleAddBundleToCart() {
@@ -143,11 +207,8 @@ function ProductDetailsPage() {
               to="/"
               className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground"
             >
-              <span className="h-2 w-2 rounded-full bg-accent" />
+              <img src="/northlane-logo.png" alt="Northlane" className="h-8 w-8 rounded-md object-cover" />
               <span>Northlane</span>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-                Studio
-              </span>
             </Link>
 
             <div className="flex items-center gap-2.5">
@@ -158,14 +219,8 @@ function ProductDetailsPage() {
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Shop
               </Link>
 
-              <button
-                onClick={() => {
-                  if (!user) {
-                    setSignUpNoticeOpen(true);
-                  } else {
-                    toast.info(`Wishlist contains ${wishlistCount} saved item(s)`);
-                  }
-                }}
+              <Link
+                to="/wishlist"
                 className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/30 transition cursor-pointer"
                 aria-label="Wishlist"
               >
@@ -177,14 +232,14 @@ function ProductDetailsPage() {
                     </span>
                   )}
                 </div>
-              </button>
+              </Link>
 
               <button
-                onClick={() => setCartDrawerOpen(true)}
+                onClick={() => openCartDrawer(true)}
                 className="relative flex items-center gap-2 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-foreground/30 cursor-pointer"
               >
                 <ShoppingBag className="h-4 w-4" />
-                <span>Bag ({cartItems.reduce((acc, i) => acc + i.count, 0)})</span>
+                <span>Bag ({itemCount})</span>
               </button>
 
               {!user ? (
@@ -387,11 +442,24 @@ function ProductDetailsPage() {
 
                   <Button
                     onClick={() => handleAddToCart(product, quantity)}
-                    className="flex-1 rounded-full py-5 sm:py-6 text-xs sm:text-sm font-bold shadow-md"
+                    className="flex-1 rounded-full py-5 sm:py-6 text-xs sm:text-sm font-bold shadow-md cursor-pointer"
                   >
                     <ShoppingBag className="h-4 w-4 mr-2" /> Add to Studio Bag · ₱
                     {(product.price * quantity).toLocaleString()}
                   </Button>
+
+                  <button
+                    onClick={toggleWishlist}
+                    className={`h-11 w-11 sm:h-12 sm:w-12 rounded-full border border-hairline flex items-center justify-center transition cursor-pointer shrink-0 ${
+                      isWishlisted
+                        ? "bg-accent/15 border-accent text-accent"
+                        : "bg-surface text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                    }`}
+                    title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                    aria-label="Wishlist"
+                  >
+                    <Heart className={`h-5 w-5 ${isWishlisted ? "fill-accent text-accent" : ""}`} />
+                  </button>
                 </div>
 
                 {/* Value Guarantees */}
@@ -580,70 +648,16 @@ function ProductDetailsPage() {
         </section>
       </div>
 
-      {/* Cart Drawer */}
-      {cartDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs">
-          <div className="relative h-full w-full max-w-md bg-background p-5 sm:p-6 shadow-2xl flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between border-b border-hairline pb-4">
-                <div className="flex items-center gap-2 text-base font-bold text-foreground">
-                  <ShoppingBag className="h-5 w-5 text-accent" /> Your Studio Bag
-                </div>
-                <button
-                  onClick={() => setCartDrawerOpen(false)}
-                  className="rounded-full p-1.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
 
-              {cartItems.length === 0 ? (
-                <div className="py-16 text-center text-xs text-muted-foreground">
-                  Your studio bag is currently empty.
-                </div>
-              ) : (
-                <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                  {cartItems.map(({ product: p, count }) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-4 rounded-2xl border border-hairline bg-surface p-3"
-                    >
-                      <img src={p.img} alt={p.name} className="h-16 w-16 rounded-xl object-cover" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-xs font-bold text-foreground truncate">{p.name}</h4>
-                        <div className="mt-1 text-xs font-bold text-foreground">
-                          Qty: {count} · ₱{(p.price * count).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {cartItems.length > 0 && (
-              <div className="border-t border-hairline pt-4 space-y-3">
-                <div className="flex justify-between text-sm font-bold text-foreground">
-                  <span>Subtotal</span>
-                  <span>
-                    ₱
-                    {cartItems
-                      .reduce((sum, i) => sum + i.product.price * i.count, 0)
-                      .toLocaleString()}
-                  </span>
-                </div>
-                <Button className="w-full rounded-full py-3 text-xs font-bold shadow-md">
-                  Proceed to Checkout &rarr;
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Shared Global Footer */}
       <Footer />
       <SignUpNoticeModal isOpen={signUpNoticeOpen} onClose={() => setSignUpNoticeOpen(false)} />
+      <AIShoppingAssistant
+        onAddToCart={handleAddToCart}
+        onShowSignUpNotice={() => setSignUpNoticeOpen(true)}
+        user={user}
+      />
     </div>
   );
 }

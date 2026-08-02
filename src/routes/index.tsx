@@ -16,7 +16,6 @@ import {
   Check,
   Menu,
   X,
-  Settings,
   SlidersHorizontal,
   ChevronRight,
   ShieldCheck,
@@ -36,6 +35,7 @@ import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
+import { useCart } from "@/context/cart-context";
 
 import heroWorkspace from "@/assets/hero-workspace.jpg";
 import productKeyboard from "@/assets/product-keyboard.jpg";
@@ -143,6 +143,7 @@ function Nav({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuthUser();
+  const { setIsOpen, itemCount } = useCart();
 
   const links = [
     { label: "Shop", href: "/shop", isRoute: true },
@@ -155,16 +156,13 @@ function Nav({
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-hairline bg-background/85 backdrop-blur-xl transition-all duration-300">
-        <div className="container-editorial grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 py-4 lg:grid-cols-3">
+        <div className="container-editorial flex items-center justify-between py-3.5 sm:py-4">
           <Link
             to="/"
             className="group flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
           >
-            <span className="h-2 w-2 rounded-full bg-accent" />
+            <img src="/northlane-logo.png" alt="Northlane" className="h-8 w-8 rounded-md object-cover" />
             <span>Northlane</span>
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-              Studio
-            </span>
           </Link>
 
           <nav className="hidden justify-center gap-8 lg:flex">
@@ -189,7 +187,7 @@ function Nav({
             )}
           </nav>
 
-          <div className="hidden items-center justify-end gap-1.5 lg:flex">
+          <div className="hidden items-center justify-end gap-2 lg:flex">
             <IconBtn label="Search" onClick={() => setSearchOpen(true)}>
               <Search className="h-4 w-4" />
             </IconBtn>
@@ -212,17 +210,16 @@ function Nav({
                 )}
               </div>
             </IconBtn>
-            <IconBtn label="Cart" onClick={onOpenCart}>
+            <IconBtn label="Cart" onClick={() => setIsOpen(true)}>
               <div className="relative">
                 <ShoppingBag className="h-4 w-4" />
-                {cartCount > 0 && (
+                {itemCount > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
-                    {cartCount}
+                    {itemCount}
                   </span>
                 )}
               </div>
             </IconBtn>
-            <AdminLink />
 
             {!user ? (
               <Link
@@ -430,20 +427,6 @@ function IconBtn({
     >
       {children}
     </button>
-  );
-}
-
-function AdminLink() {
-  const { user } = useAuthUser();
-  if (!user) return null;
-  return (
-    <Link
-      to="/admin"
-      className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-foreground/40 hover:text-foreground"
-      aria-label="CMS"
-    >
-      <Settings className="h-3.5 w-3.5" /> CMS
-    </Link>
   );
 }
 
@@ -1565,26 +1548,25 @@ function FinalCTA() {
 
 function Landing() {
   const { user } = useAuthUser();
+  const { addToCart } = useCart();
   const [signUpNoticeOpen, setSignUpNoticeOpen] = useState(false);
-  const [cart, setCart] = useState<{ product: ProductItem; quantity: number }[]>([]);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
 
-  function handleAddToCart(product: ProductItem) {
+  function handleAddToCart(product: any) {
     if (!user) {
       setSignUpNoticeOpen(true);
       return;
     }
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        );
-      }
-      return [...prev, { product, quantity: 1 }];
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.img || product.image || "",
+      category: product.category,
+      stockCount: product.stockCount,
+      quantity: 1,
     });
-    toast.success(`Added ${product.name} to cart`);
   }
 
   function handleToggleWishlist(product: ProductItem) {
@@ -1601,12 +1583,10 @@ function Landing() {
     }
   }
 
-  const cartTotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-accent/20">
       <Nav
-        cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)}
+        cartCount={0}
         wishlistCount={wishlistIds.length}
         onOpenCart={() => setCartOpen(true)}
         onShowSignUpNotice={() => setSignUpNoticeOpen(true)}
@@ -1634,99 +1614,6 @@ function Landing() {
       <SignUpNoticeModal isOpen={signUpNoticeOpen} onClose={() => setSignUpNoticeOpen(false)} />
       <AIShoppingAssistant onAddToCart={handleAddToCart} onShowSignUpNotice={() => setSignUpNoticeOpen(true)} user={user} />
 
-      {/* Cart Drawer */}
-      <AnimatePresence>
-        {cartOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="flex h-full w-full max-w-md flex-col border-l border-hairline bg-background p-6 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-hairline pb-4">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="h-5 w-5" />
-                  <h2 className="text-lg font-bold">Your Studio Bag</h2>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setCartOpen(false)}
-                  className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {cart.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center text-center">
-                  <ShoppingBag className="h-12 w-12 text-muted-foreground/40 stroke-1" />
-                  <h3 className="mt-4 text-base font-semibold">Your bag is empty</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Discover workspace essentials and add items to your studio bag.
-                  </p>
-                  <Button onClick={() => setCartOpen(false)} variant="outline" className="mt-6">
-                    Browse Collection
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex-1 overflow-y-auto py-4 space-y-4">
-                    {cart.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-4 rounded-2xl border border-hairline bg-surface p-3"
-                      >
-                        <img
-                          src={item.product.img}
-                          alt={item.product.name}
-                          className="h-16 w-16 rounded-xl object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-semibold truncate">{item.product.name}</h4>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {item.product.subtitle}
-                          </p>
-                          <div className="mt-1 text-xs font-bold">
-                            ₱{(item.product.price * item.quantity).toLocaleString()}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setCart((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-muted-foreground hover:text-foreground p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-hairline pt-4 space-y-3">
-                    <div className="flex justify-between text-base font-semibold">
-                      <span>Subtotal</span>
-                      <span>₱{cartTotal.toLocaleString()}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Free express shipping & taxes calculated at checkout.
-                    </p>
-                    <Button onClick={() => toast.success("Redirecting to secure checkout...")}>
-                      Checkout · ${cartTotal}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

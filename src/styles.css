@@ -176,3 +176,30 @@
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* Admin panel utilities */
+.field-input {
+  width: 100%;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-foreground);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.field-input:focus {
+  border-color: oklch(0.4 0.02 60 / 0.4);
+  box-shadow: 0 0 0 3px oklch(0.4 0.02 60 / 0.06);
+}
+.field-input:disabled {
+  background-color: var(--color-muted);
+  color: var(--color-muted-foreground);
+  cursor: not-allowed;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+

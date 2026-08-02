@@ -59,8 +59,8 @@ export function Footer() {
           <div className="flex flex-col justify-between">
             <div>
               <Link to="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span>Northlane Studio</span>
+                <img src="/northlane-logo.png" alt="Northlane" className="h-8 w-8 rounded-md object-cover" />
+                <span>Northlane</span>
               </Link>
               <p className="mt-3 max-w-sm text-sm text-muted-foreground leading-relaxed">
                 Premium workspace essentials for professionals who value craftsmanship, clarity, and

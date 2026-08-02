@@ -26,27 +26,27 @@ export function SignUpNoticeModal({ isOpen, onClose }: SignUpNoticeModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="my-6 space-y-3.5">
-          <div className="flex items-start gap-3 rounded-2xl bg-surface/60 p-3 border border-hairline/50">
-            <div className="mt-0.5 rounded-full bg-emerald-500/10 p-1 text-emerald-600">
+        <div className="my-8 flex flex-col gap-3">
+          <div className="group flex items-center gap-4 rounded-2xl bg-surface/40 p-3.5 transition-all hover:bg-surface/80 border border-transparent hover:border-hairline/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background border border-hairline/30 text-muted-foreground group-hover:text-foreground transition-colors shadow-sm">
               <ShoppingBag className="h-4 w-4" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground">Active Studio Bag</h4>
-              <p className="text-[11px] text-muted-foreground leading-normal mt-0.5">
-                Add, manage, and checkout premium workspace gear.
+            <div className="flex flex-col">
+              <h4 className="text-xs font-semibold text-foreground tracking-wide">Active Studio Bag</h4>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 pr-2">
+                Securely manage and checkout premium gear.
               </p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-2xl bg-surface/60 p-3 border border-hairline/50">
-            <div className="mt-0.5 rounded-full bg-accent/10 p-1 text-accent">
+          <div className="group flex items-center gap-4 rounded-2xl bg-surface/40 p-3.5 transition-all hover:bg-surface/80 border border-transparent hover:border-hairline/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background border border-hairline/30 text-muted-foreground group-hover:text-foreground transition-colors shadow-sm">
               <Heart className="h-4 w-4" />
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-foreground">Curated Wishlist</h4>
-              <p className="text-[11px] text-muted-foreground leading-normal mt-0.5">
-                Save items to customize and design your perfect desk setups.
+            <div className="flex flex-col">
+              <h4 className="text-xs font-semibold text-foreground tracking-wide">Curated Wishlist</h4>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 pr-2">
+                Save items to meticulously design your desk setups.
               </p>
             </div>
           </div>
