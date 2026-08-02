@@ -543,11 +543,11 @@ function AddressesPage() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1 font-semibold">Phone Number</label>
-                  <div className="flex gap-2">
+                  <div className="flex items-center rounded-xl bg-background border border-hairline focus-within:ring-1 focus-within:ring-foreground overflow-hidden">
                     <select
                       value={countryCode}
                       onChange={(e) => setCountryCode(e.target.value)}
-                      className="px-2 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs font-semibold cursor-pointer"
+                      className="h-10 border-0 border-r border-hairline rounded-none bg-transparent px-2 text-foreground text-xs font-semibold focus:outline-none cursor-pointer shrink-0"
                     >
                       <option value="+1">🇺🇸 +1</option>
                       <option value="+63">🇵🇭 +63</option>
@@ -558,7 +558,7 @@ function AddressesPage() {
                       placeholder="(415) 890-2104"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
+                      className="h-10 flex-1 w-full border-0 bg-transparent px-3 text-foreground text-xs focus:outline-none font-semibold"
                       required
                     />
                   </div>
