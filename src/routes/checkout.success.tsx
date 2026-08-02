@@ -12,15 +12,8 @@ function CheckoutSuccessPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("northlane_last_order");
-      if (saved) {
-        setOrder(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
+    navigate({ to: "/shop" });
+  }, [navigate]);
 
   if (!order) {
     return (

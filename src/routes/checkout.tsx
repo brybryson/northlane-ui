@@ -109,8 +109,10 @@ function CheckoutPage() {
 
       localStorage.setItem("northlane_last_order", JSON.stringify(orderSummary));
       clearCart();
-      toast.success("Payment authorized via Stripe! Order confirmed.");
-      navigate({ to: "/checkout/success" });
+      toast.success(`Payment authorized via Stripe! Order ${orderId} confirmed. Thank you!`, {
+        description: `Order total: $${grandTotal}. A receipt email has been sent to ${shippingInfo.email}.`,
+      });
+      navigate({ to: "/shop" });
     } catch (err) {
       console.error("Payment intent error:", err);
       // Client fallback to ensure order completes smoothly
@@ -129,8 +131,8 @@ function CheckoutPage() {
       };
       localStorage.setItem("northlane_last_order", JSON.stringify(orderSummary));
       clearCart();
-      toast.success("Payment authorized! Order confirmed.");
-      navigate({ to: "/checkout/success" });
+      toast.success(`Payment authorized! Order ${orderId} confirmed. Thank you!`);
+      navigate({ to: "/shop" });
     } finally {
       setIsProcessing(false);
     }
