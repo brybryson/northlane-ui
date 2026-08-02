@@ -115,12 +115,8 @@ function ProfilePage() {
     } finally {
       setIsSendingReset(false);
     }
-  };
-
-  const [activeTab, setActiveTab] = useState<"personal" | "addresses" | "security">("personal");
-
-  return (
-    <div className="space-y-6">
+  };  return (
+    <div className="space-y-8">
       <Link
         to="/account"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -131,66 +127,30 @@ function ProfilePage() {
 
       <div>
         <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
-          Account Settings
+          Account Credentials
         </div>
         <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
           Profile & Account Management
         </h2>
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-          Manage your identity details, shipping destinations, and security settings.
+          Manage your personal credentials, delivery destinations, and security settings in one place.
         </p>
       </div>
 
-      {/* Clean Tab Switcher Pills */}
-      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-hairline">
-        <button
-          type="button"
-          onClick={() => setActiveTab("personal")}
-          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border cursor-pointer ${
-            activeTab === "personal"
-              ? "bg-foreground text-background border-foreground shadow-xs"
-              : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
-          }`}
-        >
-          Personal Details
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("addresses")}
-          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border cursor-pointer ${
-            activeTab === "addresses"
-              ? "bg-foreground text-background border-foreground shadow-xs"
-              : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
-          }`}
-        >
-          Saved Addresses
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("security")}
-          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border cursor-pointer ${
-            activeTab === "security"
-              ? "bg-foreground text-background border-foreground shadow-xs"
-              : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
-          }`}
-        >
-          Security & Password
-        </button>
-      </div>
+      {/* SECTION 1: Personal Details & Photo */}
+      <form
+        onSubmit={handleOpenConfirmModal}
+        className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6"
+      >
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
+          <User className="w-4 h-4 text-accent" />
+          Personal Details & Avatar
+        </h3>
 
-      {/* Tab Content 1: Personal Information */}
-      {activeTab === "personal" && (
-        <form
-          onSubmit={handleOpenConfirmModal}
-          className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6 max-w-2xl"
-        >
-          <h3 className="text-sm font-bold text-foreground border-b border-hairline pb-3">
-            Personal Details
-          </h3>
-
-          {/* Profile Photo Uploader */}
-          <div className="p-4 rounded-xl bg-surface/50 border border-hairline flex flex-col sm:flex-row items-center gap-4">
-            <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-foreground text-background font-bold text-xl flex items-center justify-center border border-hairline shrink-0 shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Avatar Upload Card */}
+          <div className="lg:col-span-4 p-5 rounded-xl bg-surface/50 border border-hairline flex flex-col items-center text-center space-y-4">
+            <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-foreground text-background font-bold text-2xl flex items-center justify-center border border-hairline shadow-xs">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -198,153 +158,156 @@ function ProfilePage() {
               )}
             </div>
 
-            <div className="space-y-2 text-center sm:text-left flex-1">
+            <div className="space-y-1">
               <span className="text-xs font-bold text-foreground block">Profile Photo</span>
-              <p className="text-[11px] text-muted-foreground">
-                Upload a custom profile image or sync directly with your Gmail / Google account.
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Upload a custom image or sync directly with your Google account.
               </p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
-                <label className="px-3.5 py-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
-                  <span>Upload Photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarFileUpload}
-                    className="hidden"
-                  />
-                </label>
-                {googlePhotoUrl && (
-                  <button
-                    type="button"
-                    onClick={handleResetToGooglePhoto}
-                    className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 w-full pt-1">
+              <label className="px-3.5 py-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
+                <span>Upload Photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileUpload}
+                  className="hidden"
+                />
+              </label>
+              {googlePhotoUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetToGooglePhoto}
+                  className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
+                >
+                  Use Google Photo
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Form Input Fields */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Phone Number</label>
+                <div className="flex items-center rounded-xl bg-background border border-hairline focus-within:ring-1 focus-within:ring-foreground overflow-hidden">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="h-10 border-0 border-r border-hairline rounded-none bg-transparent px-2.5 text-foreground text-xs font-semibold focus:outline-none cursor-pointer shrink-0"
                   >
-                    Use Google Photo
-                  </button>
-                )}
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+63">🇵🇭 +63</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+49">🇩🇪 +49</option>
+                    <option value="+33">🇫🇷 +33</option>
+                    <option value="+81">🇯🇵 +81</option>
+                    <option value="+61">🇦🇺 +61</option>
+                    <option value="+65">🇸🇬 +65</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="h-10 flex-1 w-full border-0 bg-transparent px-3 text-foreground text-xs focus:outline-none font-semibold"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1 font-semibold">Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
-              required
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Email Address</label>
+                <input
+                  type="email"
+                  value={authUser?.email || "vrsnmllz03@gmail.com"}
+                  disabled
+                  className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
+                />
+                <span className="text-[11px] text-muted-foreground mt-1 block">
+                  Contact studio support to request an email change.
+                </span>
+              </div>
 
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1 font-semibold">Phone Number</label>
-            <div className="flex items-center rounded-xl bg-background border border-hairline focus-within:ring-1 focus-within:ring-foreground overflow-hidden">
-              <select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="h-10 border-0 border-r border-hairline rounded-none bg-transparent px-2.5 text-foreground text-xs font-semibold focus:outline-none cursor-pointer shrink-0"
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Preferred Currency</label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer font-semibold"
+                >
+                  <option value="USD ($)">USD ($) — US Dollar</option>
+                  <option value="EUR (€)">EUR (€) — Euro</option>
+                  <option value="GBP (£)">GBP (£) — British Pound</option>
+                  <option value="CAD ($)">CAD ($) — Canadian Dollar</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={isSavingProfile}
+                className="px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
               >
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+63">🇵🇭 +63</option>
-                <option value="+44">🇬🇧 +44</option>
-                <option value="+49">🇩🇪 +49</option>
-                <option value="+33">🇫🇷 +33</option>
-                <option value="+81">🇯🇵 +81</option>
-                <option value="+61">🇦🇺 +61</option>
-                <option value="+65">🇸🇬 +65</option>
-              </select>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="h-10 flex-1 w-full border-0 bg-transparent px-3 text-foreground text-xs focus:outline-none font-semibold"
-              />
+                {isSavingProfile ? "Saving..." : "Save Profile Changes"}
+              </button>
             </div>
           </div>
+        </div>
+      </form>
 
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1 font-semibold">Email Address</label>
-            <input
-              type="email"
-              value={authUser?.email || "vrsnmllz03@gmail.com"}
-              disabled
-              className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
-            />
-            <span className="text-[11px] text-muted-foreground mt-1 block">
-              Contact studio support to request an email address change.
-            </span>
-          </div>
+      {/* SECTION 2: Saved Shipping Destinations */}
+      <SavedAddressesSection />
 
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1 font-semibold">Preferred Currency</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer font-semibold"
-            >
-              <option value="USD ($)">USD ($) — US Dollar</option>
-              <option value="EUR (€)">EUR (€) — Euro</option>
-              <option value="GBP (£)">GBP (£) — British Pound</option>
-              <option value="CAD ($)">CAD ($) — Canadian Dollar</option>
-            </select>
-          </div>
+      {/* SECTION 3: Security & Password Reset */}
+      <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-4">
+        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
+          <Lock className="w-4 h-4 text-accent" />
+          Security & Authentication
+        </h3>
 
-          <div className="pt-4 border-t border-hairline flex justify-end">
-            <button
-              type="submit"
-              disabled={isSavingProfile}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {isSavingProfile ? "Saving..." : "Save Profile Changes"}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Tab Content 2: Saved Addresses */}
-      {activeTab === "addresses" && <SavedAddressesSection />}
-
-      {/* Tab Content 3: Security & Password */}
-      {activeTab === "security" && (
-        <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6 max-w-2xl">
-          <h3 className="text-sm font-bold text-foreground border-b border-hairline pb-3">
-            Security & Authentication
-          </h3>
-
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Your studio account credentials are secured with 256-bit SSL encryption and token-based session authentication.
-          </p>
-
-          <div className="p-4 rounded-xl bg-surface/50 border border-hairline space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
               <Check className="w-4 h-4 text-emerald-600" />
-              <span>SSL Session Encryption Active</span>
+              <span>256-Bit SSL Session Encryption Active</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              A password reset link will be sent directly to your registered email address.
+            <p className="text-xs text-muted-foreground max-w-xl">
+              Password resets are authenticated via secure single-use email tokens sent to your registered email address.
             </p>
           </div>
 
-          <div className="pt-2 border-t border-hairline">
-            <button
-              type="button"
-              onClick={handleSendPasswordReset}
-              disabled={isSendingReset}
-              className="w-full sm:w-auto py-3 px-6 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isSendingReset ? (
-                <span>Sending Reset Link...</span>
-              ) : (
-                <>
-                  <KeyRound className="w-4 h-4" />
-                  <span>Send Password Reset Link</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSendPasswordReset}
+            disabled={isSendingReset}
+            className="py-2.5 px-6 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
+          >
+            {isSendingReset ? (
+              <span>Sending Reset Link...</span>
+            ) : (
+              <>
+                <KeyRound className="w-4 h-4" />
+                <span>Send Password Reset Link</span>
+              </>
+            )}
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Confirmation Modal for Profile Update */}
       {showConfirmModal && (
