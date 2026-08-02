@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -156,6 +157,14 @@ function OrdersPage() {
 
   return (
     <div className="space-y-6">
+      <Link
+        to="/account"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        <span>Back to Account Overview</span>
+      </Link>
+
       <div>
         <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
           Order History

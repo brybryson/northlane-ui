@@ -194,30 +194,6 @@ function AccountLayout() {
                 </p>
               </div>
             </div>
-
-            {/* Modular Sub-Route Navigation Pills (Only shown when inside sub-pages) */}
-            {location.pathname !== "/account" && location.pathname !== "/account/" && (
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-8 pt-4 border-t border-hairline">
-                {navTabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = location.pathname.startsWith(tab.href) && tab.href !== "/account";
-                  return (
-                    <Link
-                      key={tab.href}
-                      to={tab.href}
-                      className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] transition-all flex items-center gap-2 cursor-pointer border ${
-                        isActive
-                          ? "bg-foreground text-background border-foreground shadow-xs"
-                          : "border-hairline bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{tab.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </section>
 
