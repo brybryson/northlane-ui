@@ -20,6 +20,12 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as ProductsProductIdRouteImport } from './routes/products.$productId'
+import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account/index'
+import { Route as AuthenticatedAccountAddressesRouteImport } from './routes/_authenticated/account/addresses'
+import { Route as AuthenticatedAccountAiConversationsRouteImport } from './routes/_authenticated/account/ai-conversations'
+import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account/orders'
+import { Route as AuthenticatedAccountPaymentMethodsRouteImport } from './routes/_authenticated/account/payment-methods'
+import { Route as AuthenticatedAccountProfileRouteImport } from './routes/_authenticated/account/profile'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminAiIntelligenceRouteImport } from './routes/_authenticated/admin/ai-intelligence'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
@@ -89,6 +95,42 @@ const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
   path: '/products/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAccountIndexRoute =
+  AuthenticatedAccountIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
+const AuthenticatedAccountAddressesRoute =
+  AuthenticatedAccountAddressesRouteImport.update({
+    id: '/addresses',
+    path: '/addresses',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
+const AuthenticatedAccountAiConversationsRoute =
+  AuthenticatedAccountAiConversationsRouteImport.update({
+    id: '/ai-conversations',
+    path: '/ai-conversations',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
+const AuthenticatedAccountOrdersRoute =
+  AuthenticatedAccountOrdersRouteImport.update({
+    id: '/orders',
+    path: '/orders',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
+const AuthenticatedAccountPaymentMethodsRoute =
+  AuthenticatedAccountPaymentMethodsRouteImport.update({
+    id: '/payment-methods',
+    path: '/payment-methods',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
+const AuthenticatedAccountProfileRoute =
+  AuthenticatedAccountProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -179,10 +221,15 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRouteWithChildren
   '/shop': typeof ShopRoute
   '/wishlist': typeof WishlistRoute
-  '/account': typeof AuthenticatedAccountRoute
+  '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$productId': typeof ProductsProductIdRoute
+  '/account/addresses': typeof AuthenticatedAccountAddressesRoute
+  '/account/ai-conversations': typeof AuthenticatedAccountAiConversationsRoute
+  '/account/orders': typeof AuthenticatedAccountOrdersRoute
+  '/account/payment-methods': typeof AuthenticatedAccountPaymentMethodsRoute
+  '/account/profile': typeof AuthenticatedAccountProfileRoute
   '/admin/ai-intelligence': typeof AuthenticatedAdminAiIntelligenceRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/automation': typeof AuthenticatedAdminAutomationRoute
@@ -196,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/system-health': typeof AuthenticatedAdminSystemHealthRoute
+  '/account/': typeof AuthenticatedAccountIndexRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -205,9 +253,13 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRouteWithChildren
   '/shop': typeof ShopRoute
   '/wishlist': typeof WishlistRoute
-  '/account': typeof AuthenticatedAccountRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$productId': typeof ProductsProductIdRoute
+  '/account/addresses': typeof AuthenticatedAccountAddressesRoute
+  '/account/ai-conversations': typeof AuthenticatedAccountAiConversationsRoute
+  '/account/orders': typeof AuthenticatedAccountOrdersRoute
+  '/account/payment-methods': typeof AuthenticatedAccountPaymentMethodsRoute
+  '/account/profile': typeof AuthenticatedAccountProfileRoute
   '/admin/ai-intelligence': typeof AuthenticatedAdminAiIntelligenceRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/automation': typeof AuthenticatedAdminAutomationRoute
@@ -221,6 +273,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/system-health': typeof AuthenticatedAdminSystemHealthRoute
+  '/account': typeof AuthenticatedAccountIndexRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -232,10 +285,15 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRouteWithChildren
   '/shop': typeof ShopRoute
   '/wishlist': typeof WishlistRoute
-  '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$productId': typeof ProductsProductIdRoute
+  '/_authenticated/account/addresses': typeof AuthenticatedAccountAddressesRoute
+  '/_authenticated/account/ai-conversations': typeof AuthenticatedAccountAiConversationsRoute
+  '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRoute
+  '/_authenticated/account/payment-methods': typeof AuthenticatedAccountPaymentMethodsRoute
+  '/_authenticated/account/profile': typeof AuthenticatedAccountProfileRoute
   '/_authenticated/admin/ai-intelligence': typeof AuthenticatedAdminAiIntelligenceRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/automation': typeof AuthenticatedAdminAutomationRoute
@@ -249,6 +307,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/system-health': typeof AuthenticatedAdminSystemHealthRoute
+  '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -264,6 +323,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/checkout/success'
     | '/products/$productId'
+    | '/account/addresses'
+    | '/account/ai-conversations'
+    | '/account/orders'
+    | '/account/payment-methods'
+    | '/account/profile'
     | '/admin/ai-intelligence'
     | '/admin/analytics'
     | '/admin/automation'
@@ -277,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/system-health'
+    | '/account/'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -286,9 +351,13 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/shop'
     | '/wishlist'
-    | '/account'
     | '/checkout/success'
     | '/products/$productId'
+    | '/account/addresses'
+    | '/account/ai-conversations'
+    | '/account/orders'
+    | '/account/payment-methods'
+    | '/account/profile'
     | '/admin/ai-intelligence'
     | '/admin/analytics'
     | '/admin/automation'
@@ -302,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/system-health'
+    | '/account'
     | '/admin'
   id:
     | '__root__'
@@ -316,6 +386,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/checkout/success'
     | '/products/$productId'
+    | '/_authenticated/account/addresses'
+    | '/_authenticated/account/ai-conversations'
+    | '/_authenticated/account/orders'
+    | '/_authenticated/account/payment-methods'
+    | '/_authenticated/account/profile'
     | '/_authenticated/admin/ai-intelligence'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/automation'
@@ -329,6 +404,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/system-health'
+    | '/_authenticated/account/'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -421,6 +497,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/products/$productId'
       preLoaderRoute: typeof ProductsProductIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account/': {
+      id: '/_authenticated/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AuthenticatedAccountIndexRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/account/addresses': {
+      id: '/_authenticated/account/addresses'
+      path: '/addresses'
+      fullPath: '/account/addresses'
+      preLoaderRoute: typeof AuthenticatedAccountAddressesRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/account/ai-conversations': {
+      id: '/_authenticated/account/ai-conversations'
+      path: '/ai-conversations'
+      fullPath: '/account/ai-conversations'
+      preLoaderRoute: typeof AuthenticatedAccountAiConversationsRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/account/orders': {
+      id: '/_authenticated/account/orders'
+      path: '/orders'
+      fullPath: '/account/orders'
+      preLoaderRoute: typeof AuthenticatedAccountOrdersRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/account/payment-methods': {
+      id: '/_authenticated/account/payment-methods'
+      path: '/payment-methods'
+      fullPath: '/account/payment-methods'
+      preLoaderRoute: typeof AuthenticatedAccountPaymentMethodsRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/account/profile': {
+      id: '/_authenticated/account/profile'
+      path: '/profile'
+      fullPath: '/account/profile'
+      preLoaderRoute: typeof AuthenticatedAccountProfileRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
@@ -523,6 +641,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAccountRouteChildren {
+  AuthenticatedAccountAddressesRoute: typeof AuthenticatedAccountAddressesRoute
+  AuthenticatedAccountAiConversationsRoute: typeof AuthenticatedAccountAiConversationsRoute
+  AuthenticatedAccountOrdersRoute: typeof AuthenticatedAccountOrdersRoute
+  AuthenticatedAccountPaymentMethodsRoute: typeof AuthenticatedAccountPaymentMethodsRoute
+  AuthenticatedAccountProfileRoute: typeof AuthenticatedAccountProfileRoute
+  AuthenticatedAccountIndexRoute: typeof AuthenticatedAccountIndexRoute
+}
+
+const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
+  AuthenticatedAccountAddressesRoute: AuthenticatedAccountAddressesRoute,
+  AuthenticatedAccountAiConversationsRoute:
+    AuthenticatedAccountAiConversationsRoute,
+  AuthenticatedAccountOrdersRoute: AuthenticatedAccountOrdersRoute,
+  AuthenticatedAccountPaymentMethodsRoute:
+    AuthenticatedAccountPaymentMethodsRoute,
+  AuthenticatedAccountProfileRoute: AuthenticatedAccountProfileRoute,
+  AuthenticatedAccountIndexRoute: AuthenticatedAccountIndexRoute,
+}
+
+const AuthenticatedAccountRouteWithChildren =
+  AuthenticatedAccountRoute._addFileChildren(AuthenticatedAccountRouteChildren)
+
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAiIntelligenceRoute: typeof AuthenticatedAdminAiIntelligenceRoute
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
@@ -561,12 +702,12 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedAccountRoute: AuthenticatedAccountRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
 }
 
