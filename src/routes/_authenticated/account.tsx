@@ -19,6 +19,12 @@ import {
   Check,
   ShoppingBag,
   Heart,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Box,
+  AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,6 +141,14 @@ const INITIAL_ORDERS: Order[] = [
         image: productLamp,
         sku: "NL-LMP-BR",
       },
+      {
+        id: "prod-mouse-precision",
+        name: "Precision Ergonomic Wireless Mouse",
+        price: 115,
+        qty: 1,
+        image: productMouse,
+        sku: "NL-MS-PRO",
+      },
     ],
   },
   {
@@ -165,7 +179,7 @@ const INITIAL_ADDRESSES: Address[] = [
     id: "addr-1",
     type: "Shipping",
     label: "Design Studio",
-    name: "Alex Vance",
+    name: "Vrsnmllz03",
     street: "124 Copenhagen Way, Studio #4B",
     city: "San Francisco",
     state: "CA",
@@ -177,7 +191,7 @@ const INITIAL_ADDRESSES: Address[] = [
     id: "addr-2",
     type: "Billing",
     label: "Headquarters",
-    name: "Alex Vance",
+    name: "Vrsnmllz03",
     street: "500 Howard Street, Suite 1200",
     city: "San Francisco",
     state: "CA",
@@ -238,11 +252,26 @@ function AccountPage() {
   const [payments, setPayments] = useState<PaymentMethod[]>(INITIAL_PAYMENTS);
   const [aiLogs, setAiLogs] = useState<AIConversationLog[]>(INITIAL_AI_LOGS);
 
+  // Filter state for Orders
+  const [orderFilter, setOrderFilter] = useState<"All" | "In Transit" | "Processing" | "Delivered">("All");
+  
+  // Accordion state for Delivered / Minimized orders
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({
+    "NL-89210": true, // In Transit starts expanded
+    "NL-87402": false, // Delivered starts collapsed
+  });
+
+  // State to control showing items > 3 per order
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
   // Profile Form state
-  const [fullName, setFullName] = useState("Alex Vance");
-  const [phone, setPhone] = useState("+1 (415) 890-2104");
+  const [fullName, setFullName] = useState("Vrsnmllz03");
+  const [countryCode, setCountryCode] = useState("+1");
+  const [phone, setPhone] = useState("(415) 890-2104");
   const [currency, setCurrency] = useState("USD ($)");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   // Address modal state
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -272,13 +301,37 @@ function AccountPage() {
     navigate({ to: "/auth" });
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleOpenConfirmModal = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  const handleExecuteSaveProfile = () => {
+    setShowConfirmModal(false);
     setIsSavingProfile(true);
     setTimeout(() => {
       setIsSavingProfile(false);
-      toast.success("Account profile updated successfully!");
+      toast.success("Account profile details updated successfully!");
     }, 400);
+  };
+
+  const handleSendPasswordReset = async () => {
+    setIsSendingReset(true);
+    try {
+      const email = authUser?.email || "vrsnmllz03@gmail.com";
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(`Password reset instructions sent to ${email}! Please check your inbox.`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send reset link.");
+    } finally {
+      setIsSendingReset(false);
+    }
   };
 
   const handleAddAddress = (e: React.FormEvent) => {
@@ -330,6 +383,25 @@ function AccountPage() {
     toast.success("Tracking number copied to clipboard!");
     setTimeout(() => setCopiedTracking(null), 2000);
   };
+
+  const toggleOrderExpanded = (orderId: string) => {
+    setExpandedOrders((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }));
+  };
+
+  const toggleItemsExpanded = (orderId: string) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }));
+  };
+
+  // Filtered orders list
+  const filteredOrders = orders.filter(
+    (o) => orderFilter === "All" || o.status === orderFilter
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-accent/20">
@@ -425,7 +497,7 @@ function AccountPage() {
                     {fullName}
                   </h1>
                   <p className="mt-1 text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
-                    <span>{authUser?.email || "alex.vance@northlane.studio"}</span>
+                    <span>{authUser?.email || "vrsnmllz03@gmail.com"}</span>
                     <span>•</span>
                     <span>Member since 2026</span>
                   </p>
@@ -451,7 +523,7 @@ function AccountPage() {
               </div>
             </div>
 
-            {/* Clean Category Filter Pills style matching /shop */}
+            {/* Category Filter Pills style matching /shop */}
             <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-8 pt-4 border-t border-hairline">
               {[
                 { id: "orders", label: `Orders (${orders.length})`, icon: Package },
@@ -492,9 +564,10 @@ function AccountPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="space-y-8"
+                className="space-y-6"
               >
-                <div className="flex items-center justify-between">
+                {/* Mobile & Desktop Responsive Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
                       Order History
@@ -503,163 +576,241 @@ function AccountPage() {
                       Package Tracking & History
                     </h2>
                     <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                      Track shipments in real-time, view detailed receipts, or reorder studio essentials.
+                      Track shipments in real-time or inspect past order details.
                     </p>
                   </div>
-                  <div className="text-xs font-semibold text-muted-foreground bg-surface px-3.5 py-1.5 rounded-full border border-hairline">
-                    {orders.length} Active Orders
+                  <div className="self-start sm:self-auto text-xs font-semibold text-muted-foreground bg-surface px-3.5 py-1.5 rounded-full border border-hairline whitespace-nowrap">
+                    {orders.filter((o) => o.status !== "Delivered").length} Active / {orders.length} Total Orders
                   </div>
                 </div>
 
-                {orders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="rounded-2xl bg-background border border-hairline overflow-hidden shadow-xs space-y-0"
-                  >
-                    {/* Order Top Bar */}
-                    <div className="p-5 sm:p-6 bg-surface/50 border-b border-hairline flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex flex-wrap items-center gap-6">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">Order ID</span>
-                          <span className="text-sm font-bold tracking-tight text-foreground">{order.id}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">Order Date</span>
-                          <span className="text-xs text-foreground font-semibold">{order.date}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">Total Paid</span>
-                          <span className="text-xs font-bold text-foreground">${order.total}</span>
-                        </div>
-                      </div>
+                {/* Status Filter Pills */}
+                <div className="flex flex-wrap items-center gap-2 pb-2">
+                  <span className="text-xs font-bold text-muted-foreground mr-1">Status Filter:</span>
+                  {(["All", "In Transit", "Processing", "Delivered"] as const).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setOrderFilter(st)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border cursor-pointer ${
+                        orderFilter === st
+                          ? "bg-foreground text-background border-foreground shadow-xs"
+                          : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
 
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
-                            order.status === "Delivered"
-                              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
-                              : "bg-accent/10 text-accent border-accent/20"
-                          }`}
-                        >
-                          {order.status === "Delivered" ? (
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          ) : (
-                            <Truck className="w-3.5 h-3.5" />
-                          )}
-                          <span>{order.status}</span>
-                        </span>
+                {/* Orders List */}
+                <div className="space-y-4">
+                  {filteredOrders.map((order) => {
+                    const isExpanded = expandedOrders[order.id] ?? (order.status !== "Delivered");
+                    const isItemsExpanded = expandedItems[order.id] ?? false;
+                    const visibleItems = isItemsExpanded ? order.items : order.items.slice(0, 3);
+                    const hiddenCount = order.items.length - 3;
 
-                        <button
-                          onClick={() => toast.success(`Invoice PDF generated for order ${order.id}`)}
-                          className="p-2 rounded-full bg-background hover:bg-surface text-foreground transition-colors border border-hairline cursor-pointer"
-                          title="Download Receipt PDF"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Interactive Package Tracking Timeline */}
-                    <div className="p-5 sm:p-6 bg-background border-b border-hairline">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Truck className="w-4 h-4 text-accent" />
-                          <span className="text-xs font-semibold text-foreground">
-                            {order.carrier} — <span className="text-accent font-bold">{order.trackingNumber}</span>
-                          </span>
-                          <button
-                            onClick={() => handleCopyTracking(order.trackingNumber)}
-                            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                            title="Copy tracking number"
-                          >
-                            {copiedTracking === order.trackingNumber ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          Estimated Delivery: <strong className="text-foreground font-semibold">{order.estimatedDelivery}</strong>
-                        </span>
-                      </div>
-
-                      {/* Progress Bar Timeline */}
-                      <div className="relative mt-6 mb-2">
-                        <div className="overflow-hidden h-2 text-xs flex rounded-full bg-surface border border-hairline">
-                          <div
-                            style={{
-                              width: `${
-                                order.timelineStep === 1
-                                  ? "25%"
-                                  : order.timelineStep === 2
-                                  ? "50%"
-                                  : order.timelineStep === 3
-                                  ? "75%"
-                                  : "100%"
-                              }`,
-                            }}
-                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-foreground transition-all duration-500"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 text-center mt-3">
-                          {[
-                            { step: 1, label: "Order Placed" },
-                            { step: 2, label: "Processing" },
-                            { step: 3, label: "In Transit" },
-                            { step: 4, label: "Delivered" },
-                          ].map((s) => (
-                            <div key={s.step} className="flex flex-col items-center">
-                              <span
-                                className={`text-[10px] font-semibold ${
-                                  order.timelineStep >= s.step ? "text-foreground font-bold" : "text-muted-foreground"
-                                }`}
-                              >
-                                {s.label}
+                    return (
+                      <div
+                        key={order.id}
+                        className="rounded-2xl bg-background border border-hairline overflow-hidden shadow-xs space-y-0 transition-all"
+                      >
+                        {/* Order Top Bar & Accordion Header */}
+                        <div className="p-4 sm:p-6 bg-surface/50 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
+                                Order ID
                               </span>
+                              <span className="text-sm font-bold tracking-tight text-foreground">{order.id}</span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Order Items List */}
-                    <div className="p-5 sm:p-6">
-                      <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-4">Included Items</h4>
-                      <div className="space-y-3">
-                        {order.items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center justify-between p-3.5 rounded-xl bg-surface/50 border border-hairline"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-12 h-12 rounded-xl object-cover border border-hairline shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <h5 className="text-xs font-bold tracking-tight text-foreground truncate">{item.name}</h5>
-                                <span className="text-[11px] text-muted-foreground block mt-0.5 font-semibold">
-                                  SKU: {item.sku} • Qty: {item.qty}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <span className="text-xs font-bold text-foreground">
-                                ${item.price * item.qty}
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
+                                Date
                               </span>
+                              <span className="text-xs text-foreground font-semibold">{order.date}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
+                                Total Paid
+                              </span>
+                              <span className="text-xs font-bold text-foreground">${order.total}</span>
                             </div>
                           </div>
-                        ))}
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-hairline">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
+                                order.status === "Delivered"
+                                  ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+                                  : "bg-accent/10 text-accent border-accent/20"
+                              }`}
+                            >
+                              {order.status === "Delivered" ? (
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              ) : (
+                                <Truck className="w-3.5 h-3.5" />
+                              )}
+                              <span>{order.status}</span>
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toast.success(`Invoice PDF downloaded for ${order.id}`)}
+                                className="p-2 rounded-full bg-background hover:bg-surface text-foreground transition-colors border border-hairline cursor-pointer"
+                                title="Download Receipt PDF"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                onClick={() => toggleOrderExpanded(order.id)}
+                                className="px-3 py-1.5 rounded-full bg-background hover:bg-surface text-foreground text-xs font-semibold transition-colors border border-hairline flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>{isExpanded ? "Minimize" : "Details"}</span>
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expandable Order Details Body */}
+                        <AnimatePresence initial={false}>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                            >
+                              {/* Sleek Stage Indicator Timeline */}
+                              <div className="p-4 sm:p-6 bg-background border-b border-hairline space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <Truck className="w-4 h-4 text-accent shrink-0" />
+                                    <span className="text-xs font-semibold text-foreground">
+                                      {order.carrier} — <span className="text-accent font-bold">{order.trackingNumber}</span>
+                                    </span>
+                                    <button
+                                      onClick={() => handleCopyTracking(order.trackingNumber)}
+                                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                      title="Copy tracking number"
+                                    >
+                                      {copiedTracking === order.trackingNumber ? (
+                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">
+                                    Est. Delivery: <strong className="text-foreground font-semibold">{order.estimatedDelivery}</strong>
+                                  </span>
+                                </div>
+
+                                {/* Modern Icon-Based Delivery Stepper */}
+                                <div className="pt-2">
+                                  <div className="grid grid-cols-4 gap-2 relative">
+                                    {[
+                                      { step: 1, label: "Placed", icon: Box },
+                                      { step: 2, label: "Processing", icon: Clock },
+                                      { step: 3, label: "In Transit", icon: Truck },
+                                      { step: 4, label: "Delivered", icon: CheckCircle2 },
+                                    ].map((s) => {
+                                      const IconComponent = s.icon;
+                                      const isPassed = order.timelineStep >= s.step;
+                                      const isCurrent = order.timelineStep === s.step;
+                                      return (
+                                        <div key={s.step} className="flex flex-col items-center text-center">
+                                          <div
+                                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
+                                              isCurrent
+                                                ? "bg-foreground text-background border-foreground shadow-md ring-4 ring-foreground/10"
+                                                : isPassed
+                                                ? "bg-foreground text-background border-foreground"
+                                                : "bg-surface text-muted-foreground border-hairline"
+                                            }`}
+                                          >
+                                            <IconComponent className="w-4 h-4" />
+                                          </div>
+                                          <span
+                                            className={`mt-2 text-[10px] sm:text-xs font-semibold ${
+                                              isPassed ? "text-foreground font-bold" : "text-muted-foreground"
+                                            }`}
+                                          >
+                                            {s.label}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Order Items List */}
+                              <div className="p-4 sm:p-6 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                    Included Items ({order.items.length})
+                                  </h4>
+                                </div>
+
+                                <div className="space-y-3">
+                                  {visibleItems.map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center justify-between p-3.5 rounded-xl bg-surface/50 border border-hairline"
+                                    >
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <img
+                                          src={item.image}
+                                          alt={item.name}
+                                          className="w-12 h-12 rounded-xl object-cover border border-hairline shrink-0"
+                                        />
+                                        <div className="min-w-0">
+                                          <h5 className="text-xs font-bold tracking-tight text-foreground truncate">
+                                            {item.name}
+                                          </h5>
+                                          <span className="text-[11px] text-muted-foreground block mt-0.5 font-semibold">
+                                            SKU: {item.sku} • Qty: {item.qty}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        <span className="text-xs font-bold text-foreground">
+                                          ${item.price * item.qty}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* See More Items Toggle Button */}
+                                {hiddenCount > 0 && (
+                                  <div className="pt-2 text-center">
+                                    <button
+                                      onClick={() => toggleItemsExpanded(order.id)}
+                                      className="px-4 py-2 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <span>
+                                        {isItemsExpanded ? "Show Less Items" : `+ ${hiddenCount} More Items — View All`}
+                                      </span>
+                                      {isItemsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
 
-            {/* TAB 2: PROFILE & SECURITY */}
+            {/* TAB 2: PROFILE & SETTINGS (2-Column Half/Half Layout) */}
             {activeTab === "profile" && (
               <motion.div
                 key="tab-profile"
@@ -667,7 +818,7 @@ function AccountPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="max-w-3xl space-y-8"
+                className="space-y-6"
               >
                 <div>
                   <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
@@ -681,88 +832,131 @@ function AccountPage() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSaveProfile} className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <User className="w-4 h-4 text-accent" />
-                    Personal Information
-                  </h3>
+                {/* 2-Column Split Layout (Half-Half Space on Desktop) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  {/* Left Column: Personal Information Form */}
+                  <form
+                    onSubmit={handleOpenConfirmModal}
+                    className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6"
+                  >
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
+                      <User className="w-4 h-4 text-accent" />
+                      Personal Information
+                    </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-muted-foreground block mb-1 font-semibold">Full Name</label>
                       <input
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+                        className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
                         required
                       />
                     </div>
+
                     <div>
                       <label className="text-xs text-muted-foreground block mb-1 font-semibold">Phone Number</label>
-                      <input
-                        type="text"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
-                      />
+                      <div className="flex gap-2">
+                        <select
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                          className="px-3 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer"
+                        >
+                          <option value="+1">🇺🇸 +1</option>
+                          <option value="+63">🇵🇭 +63</option>
+                          <option value="+44">🇬🇧 +44</option>
+                          <option value="+49">🇩🇪 +49</option>
+                          <option value="+33">🇫🇷 +33</option>
+                          <option value="+81">🇯🇵 +81</option>
+                          <option value="+61">🇦🇺 +61</option>
+                          <option value="+65">🇸🇬 +65</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="flex-1 px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1 font-semibold">Email Address</label>
-                    <input
-                      type="email"
-                      value={authUser?.email || "alex.vance@northlane.studio"}
-                      disabled
-                      className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
-                    />
-                    <span className="text-[11px] text-muted-foreground mt-1 block">
-                      Contact studio support to request an email address change.
-                    </span>
-                  </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground block mb-1 font-semibold">Email Address</label>
+                      <input
+                        type="email"
+                        value={authUser?.email || "vrsnmllz03@gmail.com"}
+                        disabled
+                        className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
+                      />
+                      <span className="text-[11px] text-muted-foreground mt-1 block">
+                        Contact studio support to request an email address change.
+                      </span>
+                    </div>
 
-                  <div>
-                    <label className="text-xs text-muted-foreground block mb-1 font-semibold">Preferred Currency</label>
-                    <select
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer font-semibold"
-                    >
-                      <option value="USD ($)">USD ($) — US Dollar</option>
-                      <option value="EUR (€)">EUR (€) — Euro</option>
-                      <option value="GBP (£)">GBP (£) — British Pound</option>
-                      <option value="CAD ($)">CAD ($) — Canadian Dollar</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground block mb-1 font-semibold">Preferred Currency</label>
+                      <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer font-semibold"
+                      >
+                        <option value="USD ($)">USD ($) — US Dollar</option>
+                        <option value="EUR (€)">EUR (€) — Euro</option>
+                        <option value="GBP (£)">GBP (£) — British Pound</option>
+                        <option value="CAD ($)">CAD ($) — Canadian Dollar</option>
+                      </select>
+                    </div>
 
-                  <div className="pt-4 border-t border-hairline flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={isSavingProfile}
-                      className="px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                    >
-                      {isSavingProfile ? "Saving..." : "Save Profile Changes"}
-                    </button>
-                  </div>
-                </form>
+                    <div className="pt-4 border-t border-hairline flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={isSavingProfile}
+                        className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        {isSavingProfile ? "Saving..." : "Save Profile Changes"}
+                      </button>
+                    </div>
+                  </form>
 
-                {/* Password & Security Section */}
-                <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-4">
-                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-accent" />
-                    Security & Authentication
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Your account is protected by Supabase SSL authentication and encrypted sessions.
-                  </p>
-                  <div className="pt-2">
-                    <button
-                      onClick={() => toast.info("Password reset link sent to your registered email address.")}
-                      className="px-5 py-2.5 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
-                    >
-                      Send Password Reset Link
-                    </button>
+                  {/* Right Column: Security & Password Reset */}
+                  <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6">
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
+                      <Shield className="w-4 h-4 text-accent" />
+                      Security & Authentication
+                    </h3>
+
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Your studio account credentials are protected by Supabase SSL authentication and end-to-end encrypted sessions.
+                    </p>
+
+                    <div className="p-4 rounded-xl bg-surface/50 border border-hairline space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>SSL Session Encryption Active</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Password resets are dispatched directly to your registered email address via Supabase Auth.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-hairline">
+                      <button
+                        type="button"
+                        onClick={handleSendPasswordReset}
+                        disabled={isSendingReset}
+                        className="w-full py-3 px-5 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {isSendingReset ? (
+                          <span>Sending Reset Link...</span>
+                        ) : (
+                          <>
+                            <Shield className="w-4 h-4" />
+                            <span>Send Password Reset Link</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -853,91 +1047,6 @@ function AccountPage() {
                     </div>
                   ))}
                 </div>
-
-                {/* Add Address Modal Dialog */}
-                {showAddressModal && (
-                  <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-2xl space-y-4"
-                    >
-                      <div className="flex justify-between items-center border-b border-hairline pb-3">
-                        <h3 className="text-base font-bold text-foreground">Add New Address</h3>
-                        <button
-                          onClick={() => setShowAddressModal(false)}
-                          className="text-muted-foreground hover:text-foreground cursor-pointer"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <form onSubmit={handleAddAddress} className="space-y-4">
-                        <div>
-                          <label className="text-xs text-muted-foreground block mb-1 font-semibold">Location Label</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Home, Studio, Office"
-                            value={newAddrLabel}
-                            onChange={(e) => setNewAddrLabel(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-muted-foreground block mb-1 font-semibold">Street Address</label>
-                          <input
-                            type="text"
-                            placeholder="123 Market St, Suite 400"
-                            value={newAddrStreet}
-                            onChange={(e) => setNewAddrStreet(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
-                            required
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-xs text-muted-foreground block mb-1 font-semibold">City</label>
-                            <input
-                              type="text"
-                              placeholder="San Francisco"
-                              value={newAddrCity}
-                              onChange={(e) => setNewAddrCity(e.target.value)}
-                              className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground block mb-1 font-semibold">State & Zip</label>
-                            <input
-                              type="text"
-                              placeholder="CA 94105"
-                              value={newAddrState}
-                              onChange={(e) => setNewAddrState(e.target.value)}
-                              className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="pt-4 flex justify-end gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setShowAddressModal(false)}
-                            className="px-4 py-2 rounded-full border border-hairline text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            className="px-5 py-2 rounded-full bg-foreground text-background text-xs font-bold shadow-xs cursor-pointer"
-                          >
-                            Save Address
-                          </button>
-                        </div>
-                      </form>
-                    </motion.div>
-                  </div>
-                )}
               </motion.div>
             )}
 
@@ -1071,6 +1180,128 @@ function AccountPage() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Confirmation Modal for Profile Update */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-2xl space-y-4 text-left"
+          >
+            <div className="flex items-center gap-3 border-b border-hairline pb-3">
+              <AlertCircle className="w-5 h-5 text-accent" />
+              <h3 className="text-base font-bold text-foreground">Confirm Profile Update</h3>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Are you sure you want to save these profile changes for <strong className="text-foreground">{fullName}</strong>?
+            </p>
+
+            <div className="pt-3 flex items-center justify-end gap-3 border-t border-hairline">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="px-4 py-2 rounded-full border border-hairline text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteSaveProfile}
+                className="px-5 py-2 rounded-full bg-foreground text-background text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Confirm & Save
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Add Address Modal Dialog */}
+      {showAddressModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-2xl space-y-4"
+          >
+            <div className="flex justify-between items-center border-b border-hairline pb-3">
+              <h3 className="text-base font-bold text-foreground">Add New Address</h3>
+              <button
+                onClick={() => setShowAddressModal(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddAddress} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Location Label</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Home, Studio, Office"
+                  value={newAddrLabel}
+                  onChange={(e) => setNewAddrLabel(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Street Address</label>
+                <input
+                  type="text"
+                  placeholder="123 Market St, Suite 400"
+                  value={newAddrStreet}
+                  onChange={(e) => setNewAddrStreet(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1 font-semibold">City</label>
+                  <input
+                    type="text"
+                    placeholder="San Francisco"
+                    value={newAddrCity}
+                    onChange={(e) => setNewAddrCity(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1 font-semibold">State & Zip</label>
+                  <input
+                    type="text"
+                    placeholder="CA 94105"
+                    value={newAddrState}
+                    onChange={(e) => setNewAddrState(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddressModal(false)}
+                  className="px-4 py-2 rounded-full border border-hairline text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-full bg-foreground text-background text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  Save Address
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
       {/* Global Footer & Cart Drawer */}
       <Footer />
