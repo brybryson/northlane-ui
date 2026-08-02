@@ -169,7 +169,6 @@ export const CartDrawer: React.FC = () => {
               }}
               className="mt-2 text-xs rounded-full px-5 py-2 font-semibold"
             >
-              <Sparkles className="h-3.5 w-3.5 mr-1.5 text-accent" />
               Browse Shop Catalog
             </Button>
           </div>

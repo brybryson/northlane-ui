@@ -290,21 +290,20 @@ function CartPage() {
         {/* Main Content Body */}
         <main className="container-editorial py-8 sm:py-12">
           {items.length === 0 ? (
-            <div className="rounded-[2.5rem] border border-hairline bg-surface/40 p-8 sm:p-16 text-center flex flex-col items-center justify-center space-y-5 max-w-lg mx-auto my-6 shadow-sm">
-              <div className="h-20 w-20 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted-foreground shadow-xs">
-                <ShoppingBag className="h-9 w-9 opacity-30" />
+            <div className="py-12 sm:py-16 text-center flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
+              <div className="h-16 w-16 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted-foreground shadow-xs">
+                <ShoppingBag className="h-8 w-8 opacity-40" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-xl font-bold text-foreground">Your studio bag is empty</h3>
+                <h3 className="text-xl font-bold text-foreground tracking-tight">Your studio bag is empty</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground max-w-xs leading-relaxed">
                   Discover studio-grade mechanical keyboards, precision mice, and ergonomic desks in our catalog.
                 </p>
               </div>
               <Button
                 onClick={() => navigate({ to: "/shop" })}
-                className="mt-2 rounded-full px-6 py-2.5 text-xs font-bold shadow-md cursor-pointer"
+                className="mt-2 rounded-full px-6 py-2.5 text-xs font-bold shadow-xs cursor-pointer bg-foreground text-background hover:bg-foreground/90"
               >
-                <Sparkles className="h-4 w-4 mr-2 text-accent" />
                 Explore Shop Catalog
               </Button>
             </div>
