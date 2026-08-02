@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
   ShoppingBag,
-  Check,
   Plus,
   Zap,
   Layers,
@@ -12,6 +11,7 @@ import {
   Tag,
   Info,
   CheckCircle2,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/context/cart-context";
@@ -59,7 +59,7 @@ const PRESETS: SetupPreset[] = [
     vibe: "Quiet Architecture",
     discountPercentage: 15,
     bgImage: heroWorkspace,
-    accentColor: "from-amber-500/20 to-orange-500/10",
+    accentColor: "from-amber-500/10 to-orange-500/5",
     description:
       "Engineered for deep creative work. Pairs natural solid oak wood textures with soft acoustic felt desk mats and low-profile ergonomics.",
     items: [
@@ -120,7 +120,7 @@ const PRESETS: SetupPreset[] = [
     vibe: "Software Engineering",
     discountPercentage: 18,
     bgImage: lifestyleDeveloper,
-    accentColor: "from-blue-500/20 to-indigo-500/10",
+    accentColor: "from-blue-500/10 to-indigo-500/5",
     description:
       "Built for long coding marathons. Focused light output, high-tactile hot-swappable switches, and zero-clutter cable routing.",
     items: [
@@ -181,7 +181,7 @@ const PRESETS: SetupPreset[] = [
     vibe: "Creative Direction",
     discountPercentage: 20,
     bgImage: lifestyleHome,
-    accentColor: "from-emerald-500/20 to-teal-500/10",
+    accentColor: "from-emerald-500/10 to-teal-500/5",
     description:
       "Designed for podcast hosts, digital artists, and executive leaders. Impeccable timber craftsmanship paired with broadcast-quality audio equipment.",
     items: [
@@ -281,23 +281,19 @@ export const AISetupStager: React.FC = () => {
   };
 
   return (
-    <section className="py-20 bg-stone-950 text-stone-100 overflow-hidden relative border-y border-stone-800/80">
-      {/* Background Decorative Lighting Glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-amber-500/10 blur-[140px] pointer-events-none rounded-full" />
-      <div className="absolute bottom-10 right-10 w-[400px] h-[250px] bg-blue-500/10 blur-[120px] pointer-events-none rounded-full" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section className="py-20 lg:py-28 bg-surface border-y border-hairline relative text-foreground selection:bg-accent/20">
+      <div className="container-editorial">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/90 border border-stone-800 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-4 shadow-inner">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <div className="eyebrow mb-3 justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
             <span>Interactive AI Setup Stager</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif tracking-tight text-white font-medium">
+          <h2 className="headline text-3xl sm:text-4xl lg:text-5xl font-serif">
             Stage Your Dream Workspace
           </h2>
-          <p className="mt-4 text-stone-400 text-base sm:text-lg font-light leading-relaxed">
+          <p className="mt-4 text-muted-foreground text-sm sm:text-base leading-relaxed">
             Explore curated workspace aesthetics, inspect individual precision components in interactive 3D position,
             and bundle your complete desk setup with 1-click discount savings.
           </p>
@@ -314,19 +310,21 @@ export const AISetupStager: React.FC = () => {
                   setActivePresetId(preset.id);
                   setActiveItemPin(null);
                 }}
-                className={`relative px-5 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-2.5 ${
+                className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-all duration-300 flex items-center gap-2.5 cursor-pointer border ${
                   isActive
-                    ? "bg-stone-800 text-white shadow-xl shadow-stone-950/80 border border-stone-700 ring-1 ring-amber-500/40"
-                    : "bg-stone-900/60 text-stone-400 hover:text-stone-200 hover:bg-stone-900 border border-stone-800/80"
+                    ? "bg-foreground text-background border-foreground shadow-md"
+                    : "bg-background text-muted-foreground hover:text-foreground border-hairline hover:border-foreground/30"
                 }`}
               >
-                <div
+                <span
                   className={`w-2 h-2 rounded-full ${
-                    isActive ? "bg-amber-400 animate-ping" : "bg-stone-600"
+                    isActive ? "bg-accent" : "bg-muted-foreground/40"
                   }`}
                 />
                 <span>{preset.title}</span>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-stone-950/80 text-amber-400 border border-amber-500/20">
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                  isActive ? "bg-background/20 text-background" : "bg-surface text-accent border border-accent/20"
+                }`}>
                   Save {preset.discountPercentage}%
                 </span>
               </button>
@@ -337,7 +335,7 @@ export const AISetupStager: React.FC = () => {
         {/* Main Interactive Stage Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Canvas Stager (7 Columns) */}
-          <div className="lg:col-span-7 relative group rounded-2xl overflow-hidden border border-stone-800 bg-stone-900 shadow-2xl">
+          <div className="lg:col-span-7 relative group rounded-3xl overflow-hidden border border-hairline bg-background shadow-xl">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activePreset.id}
@@ -351,21 +349,20 @@ export const AISetupStager: React.FC = () => {
                 <img
                   src={activePreset.bgImage}
                   alt={activePreset.title}
-                  className="w-full h-full object-cover brightness-[0.88] contrast-[1.05] transition-all duration-700 group-hover:scale-[1.02]"
+                  className="w-full h-full object-cover contrast-[1.03] transition-all duration-700 group-hover:scale-[1.02]"
                 />
 
                 {/* Gradient Overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/20 to-transparent" />
-                <div className={`absolute inset-0 bg-gradient-to-tr ${activePreset.accentColor} mix-blend-overlay`} />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
 
                 {/* Vibe Badge */}
-                <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-950/80 border border-stone-800 backdrop-blur-md text-xs text-stone-300 font-mono">
-                  <Layers className="w-3.5 h-3.5 text-amber-400" />
+                <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/90 border border-hairline backdrop-blur-md text-xs text-foreground font-medium shadow-sm">
+                  <Layers className="w-3.5 h-3.5 text-accent" />
                   <span>Vibe: {activePreset.vibe}</span>
                 </div>
 
                 {/* Interactive Hotspot Pins */}
-                {activePreset.items.map((item, idx) => {
+                {activePreset.items.map((item) => {
                   const isSelected = activeItemPin?.id === item.id;
                   return (
                     <div
@@ -373,17 +370,16 @@ export const AISetupStager: React.FC = () => {
                       style={{ top: `${item.yPercent}%`, left: `${item.xPercent}%` }}
                       className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
                     >
-                      {/* Pulse Ring */}
+                      {/* Hotspot Button */}
                       <button
                         onClick={() => setActiveItemPin(isSelected ? null : item)}
-                        className={`relative group/pin flex items-center justify-center p-2 rounded-full transition-transform duration-300 hover:scale-125 ${
+                        className={`relative flex items-center justify-center p-2 rounded-full transition-all duration-300 hover:scale-125 cursor-pointer ${
                           isSelected
-                            ? "bg-amber-400 text-stone-950 ring-4 ring-amber-400/40 shadow-lg shadow-amber-500/50"
-                            : "bg-stone-950/90 text-amber-400 border border-amber-400/60 shadow-md backdrop-blur-md"
+                            ? "bg-foreground text-background shadow-lg ring-4 ring-foreground/20"
+                            : "bg-background/90 text-foreground border border-hairline shadow-md backdrop-blur-md hover:border-foreground"
                         }`}
                         title={item.name}
                       >
-                        <span className="absolute -inset-1 rounded-full bg-amber-400/30 animate-ping pointer-events-none" />
                         <Plus
                           className={`w-4 h-4 transition-transform duration-300 ${
                             isSelected ? "rotate-45" : ""
@@ -399,34 +395,34 @@ export const AISetupStager: React.FC = () => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 p-3 rounded-xl bg-stone-900/95 border border-stone-700/80 shadow-2xl backdrop-blur-xl z-50 text-left"
+                            className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 p-3.5 rounded-2xl bg-background border border-hairline shadow-2xl backdrop-blur-xl z-50 text-left"
                           >
                             <div className="flex gap-3 items-center">
                               <img
                                 src={item.image}
                                 alt={item.name}
-                                className="w-12 h-12 rounded-lg object-cover border border-stone-700"
+                                className="w-12 h-12 rounded-xl object-cover border border-hairline"
                               />
                               <div className="flex-1 min-w-0">
-                                <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider block">
+                                <span className="text-[10px] font-mono text-accent uppercase tracking-wider block font-semibold">
                                   {item.category}
                                 </span>
-                                <h4 className="text-xs font-semibold text-white truncate">{item.name}</h4>
+                                <h4 className="text-xs font-bold text-foreground truncate">{item.name}</h4>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-xs font-bold text-amber-400">${item.price}</span>
-                                  <span className="text-[10px] text-stone-500 line-through">
+                                  <span className="text-xs font-bold text-foreground">${item.price}</span>
+                                  <span className="text-[10px] text-muted-foreground line-through">
                                     ${item.originalPrice}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <p className="text-[11px] text-stone-400 mt-2 line-clamp-2 leading-tight">
+                            <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2 leading-tight">
                               {item.description}
                             </p>
 
                             <button
                               onClick={() => handleAddSingleItem(item)}
-                              className="mt-2.5 w-full py-1.5 px-3 rounded-lg bg-stone-800 hover:bg-amber-500 hover:text-stone-950 text-white text-xs font-medium transition-colors flex items-center justify-center gap-1.5 border border-stone-700 hover:border-amber-400"
+                              className="mt-3 w-full py-1.5 px-3 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                             >
                               <ShoppingBag className="w-3.5 h-3.5" />
                               <span>Add Single Item</span>
@@ -441,33 +437,33 @@ export const AISetupStager: React.FC = () => {
             </AnimatePresence>
 
             {/* Bottom Stager Banner Info */}
-            <div className="p-4 bg-stone-900/90 border-t border-stone-800/80 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-xs text-stone-400 font-light">
-                <Info className="w-4 h-4 text-amber-400 shrink-0" />
+            <div className="p-4 bg-background/90 border-t border-hairline flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Info className="w-4 h-4 text-accent shrink-0" />
                 <span>Click interactive hotspots on the canvas to inspect setup gear.</span>
               </div>
-              <div className="text-xs font-mono text-amber-400 shrink-0">
-                {activePreset.items.length} Curated Gear Items
+              <div className="text-xs font-mono font-semibold text-foreground shrink-0">
+                {activePreset.items.length} Curated Items
               </div>
             </div>
           </div>
 
           {/* Right Bundle Summary Sidebar (5 Columns) */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="p-6 rounded-2xl bg-stone-900/80 border border-stone-800 shadow-xl backdrop-blur-sm relative overflow-hidden">
+            <div className="p-6 sm:p-8 rounded-3xl bg-background border border-hairline shadow-md backdrop-blur-sm relative overflow-hidden">
               {/* Highlight Tag */}
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-mono uppercase tracking-widest text-amber-400">
+                <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
                   Setup Bundle Breakdown
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-semibold">
                   <Tag className="w-3 h-3" />
                   <span>Bundle Discount Active</span>
                 </span>
               </div>
 
-              <h3 className="text-2xl font-serif font-medium text-white">{activePreset.title}</h3>
-              <p className="mt-1 text-xs text-stone-400 leading-relaxed font-light">
+              <h3 className="text-2xl font-serif font-bold text-foreground">{activePreset.title}</h3>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
                 {activePreset.description}
               </p>
 
@@ -477,48 +473,48 @@ export const AISetupStager: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => setActiveItemPin(item)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                       activeItemPin?.id === item.id
-                        ? "bg-stone-800/90 border-amber-500/60 shadow-md ring-1 ring-amber-500/30"
-                        : "bg-stone-950/50 border-stone-800 hover:border-stone-700 hover:bg-stone-950/80"
+                        ? "bg-surface border-foreground shadow-sm"
+                        : "bg-background border-hairline hover:border-foreground/30 hover:bg-surface/50"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-10 h-10 rounded-lg object-cover border border-stone-800 shrink-0"
+                        className="w-10 h-10 rounded-xl object-cover border border-hairline shrink-0"
                       />
                       <div className="min-w-0">
-                        <h5 className="text-xs font-medium text-stone-200 truncate">{item.name}</h5>
-                        <span className="text-[10px] text-stone-400 font-mono block">{item.category}</span>
+                        <h5 className="text-xs font-bold text-foreground truncate">{item.name}</h5>
+                        <span className="text-[10px] text-muted-foreground font-mono block">{item.category}</span>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-xs font-semibold text-stone-200">${item.price}</div>
-                      <div className="text-[10px] text-stone-500 line-through">${item.originalPrice}</div>
+                      <div className="text-xs font-bold text-foreground">${item.price}</div>
+                      <div className="text-[10px] text-muted-foreground line-through">${item.originalPrice}</div>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Price Calculation Summary Box */}
-              <div className="mt-6 p-4 rounded-xl bg-stone-950/80 border border-stone-800 space-y-2">
-                <div className="flex justify-between text-xs text-stone-400">
+              <div className="mt-6 p-4 rounded-2xl bg-surface border border-hairline space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Individual Items Retail</span>
-                  <span className="line-through text-stone-500">${originalTotal}</span>
+                  <span className="line-through">${originalTotal}</span>
                 </div>
-                <div className="flex justify-between text-xs text-amber-400 font-medium">
+                <div className="flex justify-between text-xs text-accent font-semibold">
                   <span>Bundle Savings ({activePreset.discountPercentage}%)</span>
                   <span>-${totalSavings}</span>
                 </div>
-                <div className="pt-2 border-t border-stone-800 flex justify-between items-baseline">
+                <div className="pt-2 border-t border-hairline flex justify-between items-baseline">
                   <div>
-                    <span className="text-xs text-stone-400 block font-light">Complete Setup Price</span>
-                    <span className="text-2xl font-bold font-mono text-white">${finalBundlePrice}</span>
+                    <span className="text-xs text-muted-foreground block">Complete Setup Price</span>
+                    <span className="text-2xl font-bold font-serif text-foreground">${finalBundlePrice}</span>
                   </div>
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                     Save ${totalSavings} Total
                   </span>
                 </div>
@@ -528,13 +524,13 @@ export const AISetupStager: React.FC = () => {
               <button
                 onClick={handleAddFullSetup}
                 disabled={isAddingBundle}
-                className="mt-6 w-full py-4 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-stone-950 font-semibold text-sm transition-all duration-300 transform active:scale-[0.99] shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 group disabled:opacity-50"
+                className="mt-6 w-full py-3.5 px-6 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-lg flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50"
               >
                 {isAddingBundle ? (
-                  <div className="w-5 h-5 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 fill-stone-950" />
+                    <Zap className="w-4 h-4 fill-background" />
                     <span>Add Full Setup to Bag (${finalBundlePrice})</span>
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </>
@@ -542,14 +538,14 @@ export const AISetupStager: React.FC = () => {
               </button>
 
               {/* Guarantee Footer */}
-              <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-stone-400 font-light">
+              <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-accent" />
                   3-Year Studio Warranty
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
                   Free Global Express Shipping
                 </span>
               </div>
