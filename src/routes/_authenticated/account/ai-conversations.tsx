@@ -84,9 +84,8 @@ function AIConversationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Intelligence Log</span>
+        <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
+          Intelligence Log
         </div>
         <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
           AI Shopping Assistant Log

@@ -341,9 +341,8 @@ function AddressesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent flex items-center gap-1.5">
-            <Navigation className="w-3.5 h-3.5" />
-            <span>Fulfillment Destinations</span>
+          <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
+            Fulfillment Destinations
           </div>
           <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Saved Shipping Addresses
@@ -380,63 +379,50 @@ function AddressesPage() {
           {addresses.map((addr) => (
             <div
               key={addr.id}
-              className={`p-6 rounded-2xl bg-background border transition-all relative ${
+              className={`p-6 rounded-2xl bg-background border transition-all relative flex flex-col justify-between ${
                 addr.isDefault
                   ? "border-foreground shadow-xs"
                   : "border-hairline hover:border-foreground/30"
               }`}
             >
-              {/* Header Label */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  {addr.label === "Home" ? (
-                    <Home className="w-4 h-4 text-accent" />
-                  ) : addr.label === "Work" || addr.label === "Design Studio" || addr.label === "Headquarters" ? (
-                    <Building2 className="w-4 h-4 text-accent" />
-                  ) : (
-                    <MapPin className="w-4 h-4 text-accent" />
-                  )}
-                  <span className="text-sm font-bold text-foreground">{addr.label}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {addr.isVerified && (
-                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 flex items-center gap-1">
-                      <Check className="w-3 h-3" />
-                      <span>Verified</span>
-                    </span>
-                  )}
-                  {addr.isDefault && (
-                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-                      Primary
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Address Content Details */}
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p className="font-bold text-foreground flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-accent shrink-0" />
-                  <span>{addr.recipientName}</span>
-                </p>
-                <p className="text-muted-foreground flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-accent shrink-0" />
-                  <span>{addr.phoneNumber}</span>
-                </p>
-                <p className="pt-1 text-foreground font-medium">
-                  {addr.streetAddress}{addr.aptSuite ? `, ${addr.aptSuite}` : ""}
-                </p>
-                <p>
-                  {addr.city}, {addr.state} {addr.zipCode}
-                </p>
-                <p className="text-muted-foreground">{addr.country}</p>
-
-                {addr.deliveryInstructions && (
-                  <div className="mt-3 p-2.5 rounded-xl bg-surface/60 border border-hairline text-[11px] text-muted-foreground flex items-start gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
-                    <span>Instructions: "{addr.deliveryInstructions}"</span>
+              <div>
+                {/* Header Label & Badges */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-hairline">
+                  <span className="text-base font-bold tracking-tight text-foreground">{addr.label}</span>
+                  <div className="flex items-center gap-2">
+                    {addr.isVerified && (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                        Verified
+                      </span>
+                    )}
+                    {addr.isDefault && (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                        Primary
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
+
+                {/* Clean Address Content */}
+                <div className="text-xs text-muted-foreground space-y-2.5">
+                  <div>
+                    <span className="font-bold text-foreground block text-sm">{addr.recipientName}</span>
+                    <span className="text-muted-foreground font-semibold text-xs">{addr.phoneNumber}</span>
+                  </div>
+
+                  <div className="pt-1 text-foreground space-y-0.5 font-semibold leading-relaxed">
+                    <p>{addr.streetAddress}{addr.aptSuite ? `, ${addr.aptSuite}` : ""}</p>
+                    <p>{addr.city}, {addr.state} {addr.zipCode}</p>
+                    <p className="text-muted-foreground font-normal">{addr.country}</p>
+                  </div>
+
+                  {addr.deliveryInstructions && (
+                    <div className="mt-3 p-3 rounded-xl bg-surface/70 border border-hairline text-xs text-muted-foreground leading-relaxed">
+                      <span className="font-bold text-foreground block mb-0.5">Delivery Note</span>
+                      <span>"{addr.deliveryInstructions}"</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}
