@@ -22,6 +22,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  Lock,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -931,21 +933,21 @@ function AccountPage() {
                   {/* Right Column: Security & Password Reset */}
                   <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6">
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
-                      <Shield className="w-4 h-4 text-accent" />
+                      <Lock className="w-4 h-4 text-accent" />
                       Security & Authentication
                     </h3>
 
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Your studio account credentials are protected by Supabase SSL authentication and end-to-end encrypted sessions.
+                      Your studio account credentials are secured with 256-bit SSL encryption and token-based session authentication.
                     </p>
 
                     <div className="p-4 rounded-xl bg-surface/50 border border-hairline space-y-2">
                       <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <Check className="w-4 h-4 text-emerald-600" />
                         <span>SSL Session Encryption Active</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
-                        Password resets are dispatched directly to your registered email address via Supabase Auth.
+                        A password reset link will be sent directly to your registered email address.
                       </p>
                     </div>
 
@@ -960,7 +962,7 @@ function AccountPage() {
                           <span>Sending Reset Link...</span>
                         ) : (
                           <>
-                            <Shield className="w-4 h-4" />
+                            <KeyRound className="w-4 h-4" />
                             <span>Send Password Reset Link</span>
                           </>
                         )}
