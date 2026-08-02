@@ -21,10 +21,7 @@ import {
   Heart,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Box,
   AlertCircle,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -566,22 +563,17 @@ function AccountPage() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                {/* Mobile & Desktop Responsive Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
-                      Order History
-                    </div>
-                    <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                      Package Tracking & History
-                    </h2>
-                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                      Track shipments in real-time or inspect past order details.
-                    </p>
+                {/* Header */}
+                <div>
+                  <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
+                    Order History
                   </div>
-                  <div className="self-start sm:self-auto text-xs font-semibold text-muted-foreground bg-surface px-3.5 py-1.5 rounded-full border border-hairline whitespace-nowrap">
-                    {orders.filter((o) => o.status !== "Delivered").length} Active / {orders.length} Total Orders
-                  </div>
+                  <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                    Package Tracking & History
+                  </h2>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                    Track shipments in real-time or inspect past order details.
+                  </p>
                 </div>
 
                 {/* Status Filter Pills */}
@@ -602,211 +594,228 @@ function AccountPage() {
                   ))}
                 </div>
 
-                {/* Orders List */}
-                <div className="space-y-4">
-                  {filteredOrders.map((order) => {
-                    const isExpanded = expandedOrders[order.id] ?? (order.status !== "Delivered");
-                    const isItemsExpanded = expandedItems[order.id] ?? false;
-                    const visibleItems = isItemsExpanded ? order.items : order.items.slice(0, 3);
-                    const hiddenCount = order.items.length - 3;
+                {/* Orders List / Empty Filter State */}
+                {filteredOrders.length === 0 ? (
+                  <div className="p-8 sm:p-12 text-center rounded-2xl bg-background border border-hairline space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-surface text-muted-foreground mx-auto flex items-center justify-center border border-hairline">
+                      <Package className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-sm font-bold tracking-tight text-foreground">No Orders Found</h3>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      There are currently no orders matching the "{orderFilter}" filter.
+                    </p>
+                    <button
+                      onClick={() => setOrderFilter("All")}
+                      className="mt-2 px-4 py-2 rounded-full bg-foreground text-background text-xs font-bold shadow-xs cursor-pointer"
+                    >
+                      View All Orders
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredOrders.map((order) => {
+                      const isExpanded = expandedOrders[order.id] ?? (order.status !== "Delivered");
+                      const isItemsExpanded = expandedItems[order.id] ?? false;
+                      const visibleItems = isItemsExpanded ? order.items : order.items.slice(0, 3);
+                      const hiddenCount = order.items.length - 3;
 
-                    return (
-                      <div
-                        key={order.id}
-                        className="rounded-2xl bg-background border border-hairline overflow-hidden shadow-xs space-y-0 transition-all"
-                      >
-                        {/* Order Top Bar & Accordion Header */}
-                        <div className="p-4 sm:p-6 bg-surface/50 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                            <div>
-                              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
-                                Order ID
-                              </span>
-                              <span className="text-sm font-bold tracking-tight text-foreground">{order.id}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
-                                Date
-                              </span>
-                              <span className="text-xs text-foreground font-semibold">{order.date}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
-                                Total Paid
-                              </span>
-                              <span className="text-xs font-bold text-foreground">${order.total}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-hairline">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
-                                order.status === "Delivered"
-                                  ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
-                                  : "bg-accent/10 text-accent border-accent/20"
-                              }`}
-                            >
-                              {order.status === "Delivered" ? (
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                              ) : (
-                                <Truck className="w-3.5 h-3.5" />
-                              )}
-                              <span>{order.status}</span>
-                            </span>
-
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => toast.success(`Invoice PDF downloaded for ${order.id}`)}
-                                className="p-2 rounded-full bg-background hover:bg-surface text-foreground transition-colors border border-hairline cursor-pointer"
-                                title="Download Receipt PDF"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                onClick={() => toggleOrderExpanded(order.id)}
-                                className="px-3 py-1.5 rounded-full bg-background hover:bg-surface text-foreground text-xs font-semibold transition-colors border border-hairline flex items-center gap-1 cursor-pointer"
-                              >
-                                <span>{isExpanded ? "Minimize" : "Details"}</span>
-                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Expandable Order Details Body */}
-                        <AnimatePresence initial={false}>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.25 }}
-                            >
-                              {/* Sleek Stage Indicator Timeline */}
-                              <div className="p-4 sm:p-6 bg-background border-b border-hairline space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <Truck className="w-4 h-4 text-accent shrink-0" />
-                                    <span className="text-xs font-semibold text-foreground">
-                                      {order.carrier} — <span className="text-accent font-bold">{order.trackingNumber}</span>
-                                    </span>
-                                    <button
-                                      onClick={() => handleCopyTracking(order.trackingNumber)}
-                                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                                      title="Copy tracking number"
-                                    >
-                                      {copiedTracking === order.trackingNumber ? (
-                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                      ) : (
-                                        <Copy className="w-3.5 h-3.5" />
-                                      )}
-                                    </button>
-                                  </div>
-                                  <span className="text-xs text-muted-foreground">
-                                    Est. Delivery: <strong className="text-foreground font-semibold">{order.estimatedDelivery}</strong>
-                                  </span>
-                                </div>
-
-                                {/* Modern Icon-Based Delivery Stepper */}
-                                <div className="pt-2">
-                                  <div className="grid grid-cols-4 gap-2 relative">
-                                    {[
-                                      { step: 1, label: "Placed", icon: Box },
-                                      { step: 2, label: "Processing", icon: Clock },
-                                      { step: 3, label: "In Transit", icon: Truck },
-                                      { step: 4, label: "Delivered", icon: CheckCircle2 },
-                                    ].map((s) => {
-                                      const IconComponent = s.icon;
-                                      const isPassed = order.timelineStep >= s.step;
-                                      const isCurrent = order.timelineStep === s.step;
-                                      return (
-                                        <div key={s.step} className="flex flex-col items-center text-center">
-                                          <div
-                                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
-                                              isCurrent
-                                                ? "bg-foreground text-background border-foreground shadow-md ring-4 ring-foreground/10"
-                                                : isPassed
-                                                ? "bg-foreground text-background border-foreground"
-                                                : "bg-surface text-muted-foreground border-hairline"
-                                            }`}
-                                          >
-                                            <IconComponent className="w-4 h-4" />
-                                          </div>
-                                          <span
-                                            className={`mt-2 text-[10px] sm:text-xs font-semibold ${
-                                              isPassed ? "text-foreground font-bold" : "text-muted-foreground"
-                                            }`}
-                                          >
-                                            {s.label}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                      return (
+                        <div
+                          key={order.id}
+                          className="rounded-2xl bg-background border border-hairline overflow-hidden shadow-xs space-y-0 transition-all"
+                        >
+                          {/* Order Top Bar & Accordion Header */}
+                          <div className="p-4 sm:p-6 bg-surface/50 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                              <div>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
+                                  Order ID
+                                </span>
+                                <span className="text-sm font-bold tracking-tight text-foreground">{order.id}</span>
                               </div>
+                              <div>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
+                                  Date
+                                </span>
+                                <span className="text-xs text-foreground font-semibold">{order.date}</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground block">
+                                  Total Paid
+                                </span>
+                                <span className="text-xs font-bold text-foreground">${order.total}</span>
+                              </div>
+                            </div>
 
-                              {/* Order Items List */}
-                              <div className="p-4 sm:p-6 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                                    Included Items ({order.items.length})
-                                  </h4>
-                                </div>
-
-                                <div className="space-y-3">
-                                  {visibleItems.map((item) => (
-                                    <div
-                                      key={item.id}
-                                      className="flex items-center justify-between p-3.5 rounded-xl bg-surface/50 border border-hairline"
-                                    >
-                                      <div className="flex items-center gap-3 min-w-0">
-                                        <img
-                                          src={item.image}
-                                          alt={item.name}
-                                          className="w-12 h-12 rounded-xl object-cover border border-hairline shrink-0"
-                                        />
-                                        <div className="min-w-0">
-                                          <h5 className="text-xs font-bold tracking-tight text-foreground truncate">
-                                            {item.name}
-                                          </h5>
-                                          <span className="text-[11px] text-muted-foreground block mt-0.5 font-semibold">
-                                            SKU: {item.sku} • Qty: {item.qty}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <div className="text-right shrink-0">
-                                        <span className="text-xs font-bold text-foreground">
-                                          ${item.price * item.qty}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* See More Items Toggle Button */}
-                                {hiddenCount > 0 && (
-                                  <div className="pt-2 text-center">
-                                    <button
-                                      onClick={() => toggleItemsExpanded(order.id)}
-                                      className="px-4 py-2 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                                    >
-                                      <span>
-                                        {isItemsExpanded ? "Show Less Items" : `+ ${hiddenCount} More Items — View All`}
-                                      </span>
-                                      {isItemsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                                    </button>
-                                  </div>
+                            <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-hairline">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
+                                  order.status === "Delivered"
+                                    ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+                                    : "bg-accent/10 text-accent border-accent/20"
+                                }`}
+                              >
+                                {order.status === "Delivered" ? (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Truck className="w-3.5 h-3.5" />
                                 )}
+                                <span>{order.status}</span>
+                              </span>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => toast.success(`Invoice PDF downloaded for ${order.id}`)}
+                                  className="p-2 rounded-full bg-background hover:bg-surface text-foreground transition-colors border border-hairline cursor-pointer"
+                                  title="Download Receipt PDF"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  onClick={() => toggleOrderExpanded(order.id)}
+                                  className="px-3 py-1.5 rounded-full bg-background hover:bg-surface text-foreground text-xs font-semibold transition-colors border border-hairline flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>{isExpanded ? "Minimize" : "Details"}</span>
+                                  {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                </button>
                               </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                </div>
+                            </div>
+                          </div>
+
+                          {/* Expandable Order Details Body */}
+                          <AnimatePresence initial={false}>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                              >
+                                {/* Minimal Delivery Progress Bar */}
+                                <div className="p-4 sm:p-6 bg-background border-b border-hairline space-y-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <Truck className="w-4 h-4 text-accent shrink-0" />
+                                      <span className="text-xs font-semibold text-foreground">
+                                        {order.carrier} — <span className="text-accent font-bold">{order.trackingNumber}</span>
+                                      </span>
+                                      <button
+                                        onClick={() => handleCopyTracking(order.trackingNumber)}
+                                        className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                        title="Copy tracking number"
+                                      >
+                                        {copiedTracking === order.trackingNumber ? (
+                                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                        ) : (
+                                          <Copy className="w-3.5 h-3.5" />
+                                        )}
+                                      </button>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      Est. Delivery: <strong className="text-foreground font-semibold">{order.estimatedDelivery}</strong>
+                                    </span>
+                                  </div>
+
+                                  {/* Simple Clean Progress Line Bar */}
+                                  <div className="space-y-2 pt-1">
+                                    <div className="overflow-hidden h-1.5 text-xs flex rounded-full bg-surface border border-hairline">
+                                      <div
+                                        style={{
+                                          width: `${
+                                            order.timelineStep === 1
+                                              ? "25%"
+                                              : order.timelineStep === 2
+                                              ? "50%"
+                                              : order.timelineStep === 3
+                                              ? "75%"
+                                              : "100%"
+                                          }`,
+                                        }}
+                                        className="bg-foreground transition-all duration-500 rounded-full"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-4 text-center">
+                                      {[
+                                        { step: 1, label: "Placed" },
+                                        { step: 2, label: "Processing" },
+                                        { step: 3, label: "In Transit" },
+                                        { step: 4, label: "Delivered" },
+                                      ].map((s) => (
+                                        <span
+                                          key={s.step}
+                                          className={`text-[11px] font-medium transition-colors ${
+                                            order.timelineStep >= s.step ? "text-foreground font-bold" : "text-muted-foreground/60"
+                                          }`}
+                                        >
+                                          {s.label}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Order Items List */}
+                                <div className="p-4 sm:p-6 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                                      Included Items ({order.items.length})
+                                    </h4>
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    {visibleItems.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center justify-between p-3.5 rounded-xl bg-surface/50 border border-hairline"
+                                      >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                          <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="w-12 h-12 rounded-xl object-cover border border-hairline shrink-0"
+                                          />
+                                          <div className="min-w-0">
+                                            <h5 className="text-xs font-bold tracking-tight text-foreground truncate">
+                                              {item.name}
+                                            </h5>
+                                            <span className="text-[11px] text-muted-foreground block mt-0.5 font-semibold">
+                                              SKU: {item.sku} • Qty: {item.qty}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                          <span className="text-xs font-bold text-foreground">
+                                            ${item.price * item.qty}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  {/* See More Items Toggle Button */}
+                                  {hiddenCount > 0 && (
+                                    <div className="pt-2 text-center">
+                                      <button
+                                        onClick={() => toggleItemsExpanded(order.id)}
+                                        className="px-4 py-2 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                                      >
+                                        <span>
+                                          {isItemsExpanded ? "Show Less Items" : `+ ${hiddenCount} More Items — View All`}
+                                        </span>
+                                        {isItemsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
