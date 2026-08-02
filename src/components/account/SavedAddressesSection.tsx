@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import { Plus, Trash2, Edit3, Search, MapPin, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Plus, Trash2, Edit3, Search, MapPin, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 export interface SavedAddress {
@@ -37,6 +37,7 @@ export interface PlaceSuggestion {
 export function SavedAddressesSection() {
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibleLimit, setVisibleLimit] = useState(2);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -346,91 +347,124 @@ export function SavedAddressesSection() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {addresses.map((addr) => (
-            <div
-              key={addr.id}
-              className={`p-6 rounded-2xl bg-background border transition-all relative flex flex-col justify-between ${
-                addr.isDefault
-                  ? "border-foreground shadow-xs"
-                  : "border-hairline hover:border-foreground/30"
-              }`}
-            >
-              <div>
-                {/* Header Label & Badges */}
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-hairline">
-                  <span className="text-base font-bold tracking-tight text-foreground">{addr.label}</span>
-                  <div className="flex items-center gap-2">
-                    {addr.isVerified && (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-                        Verified
-                      </span>
-                    )}
-                    {addr.isDefault && (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-                        Primary
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Clean Address Content */}
-                <div className="text-xs text-muted-foreground space-y-2.5">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AnimatePresence>
+              {addresses.slice(0, visibleLimit).map((addr) => (
+                <motion.div
+                  key={addr.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                  className={`p-6 rounded-2xl bg-background border transition-all relative flex flex-col justify-between ${
+                    addr.isDefault
+                      ? "border-foreground shadow-xs"
+                      : "border-hairline hover:border-foreground/30"
+                  }`}
+                >
                   <div>
-                    <span className="font-bold text-foreground block text-sm">{addr.recipientName}</span>
-                    <span className="text-muted-foreground font-semibold text-xs">{addr.phoneNumber}</span>
-                  </div>
-
-                  <div className="pt-1 text-foreground space-y-0.5 font-semibold leading-relaxed">
-                    <p>{addr.streetAddress}{addr.aptSuite ? `, ${addr.aptSuite}` : ""}</p>
-                    <p>{addr.city}, {addr.state} {addr.zipCode}</p>
-                    <p className="text-muted-foreground font-normal">{addr.country}</p>
-                  </div>
-
-                  {addr.deliveryInstructions && (
-                    <div className="mt-3 p-3 rounded-xl bg-surface/70 border border-hairline text-xs text-muted-foreground leading-relaxed">
-                      <span className="font-bold text-foreground block mb-0.5">Delivery Note</span>
-                      <span>"{addr.deliveryInstructions}"</span>
+                    {/* Header Label & Badges */}
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-hairline">
+                      <span className="text-base font-bold tracking-tight text-foreground">{addr.label}</span>
+                      <div className="flex items-center gap-2">
+                        {addr.isVerified && (
+                          <span className="text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                            Verified
+                          </span>
+                        )}
+                        {addr.isDefault && (
+                          <span className="text-[10px] font-bold uppercase tracking-[0.12em] px-2.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                            Primary
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="mt-6 pt-4 border-t border-hairline flex items-center justify-between">
-                {!addr.isDefault ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSetDefault(addr.id)}
-                    className="text-xs text-accent hover:underline font-semibold cursor-pointer"
-                  >
-                    Set as Primary
-                  </button>
-                ) : (
-                  <span className="text-xs text-muted-foreground font-semibold">Primary Location</span>
-                )}
+                    {/* Clean Address Content */}
+                    <div className="text-xs text-muted-foreground space-y-2.5">
+                      <div>
+                        <span className="font-bold text-foreground block text-sm">{addr.recipientName}</span>
+                        <span className="text-muted-foreground font-semibold text-xs">{addr.phoneNumber}</span>
+                      </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditModal(addr)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    title="Edit address"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteAddress(addr.id)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer"
-                    title="Delete address"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+                      <div className="pt-1 text-foreground space-y-0.5 font-semibold leading-relaxed">
+                        <p>{addr.streetAddress}{addr.aptSuite ? `, ${addr.aptSuite}` : ""}</p>
+                        <p>{addr.city}, {addr.state} {addr.zipCode}</p>
+                        <p className="text-muted-foreground font-normal">{addr.country}</p>
+                      </div>
+
+                      {addr.deliveryInstructions && (
+                        <div className="mt-3 p-3 rounded-xl bg-surface/70 border border-hairline text-xs text-muted-foreground leading-relaxed">
+                          <span className="font-bold text-foreground block mb-0.5">Delivery Note</span>
+                          <span>"{addr.deliveryInstructions}"</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-6 pt-4 border-t border-hairline flex items-center justify-between">
+                    {!addr.isDefault ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSetDefault(addr.id)}
+                        className="text-xs text-accent hover:underline font-semibold cursor-pointer"
+                      >
+                        Set as Primary
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground font-semibold">Primary Location</span>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(addr)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        title="Edit address"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAddress(addr.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        title="Delete address"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Smooth Show More / Show Less Pagination Button */}
+          {addresses.length > 2 && (
+            <div className="pt-2 flex justify-center">
+              {visibleLimit < addresses.length ? (
+                <button
+                  type="button"
+                  onClick={() => setVisibleLimit((prev) => prev + 2)}
+                  className="px-5 py-2 rounded-full border border-hairline bg-surface hover:bg-muted/50 text-foreground text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <span>Show More Addresses (+{Math.min(2, addresses.length - visibleLimit)})</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-accent" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setVisibleLimit(2)}
+                  className="px-5 py-2 rounded-full border border-hairline bg-surface hover:bg-muted/50 text-foreground text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <span>Show Less</span>
+                  <ChevronUp className="w-3.5 h-3.5 text-accent" />
+                </button>
+              )}
             </div>
-          ))}
+          )}
         </div>
       )}
 

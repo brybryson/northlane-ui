@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { User, Lock, Check, KeyRound, AlertCircle, ArrowLeft } from "lucide-react";
+import { User, KeyRound, AlertCircle, ArrowLeft, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SavedAddressesSection } from "@/components/account/SavedAddressesSection";
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/account/profile")({
   head: () => ({
     meta: [
       { title: "Profile & Security — Northlane Studio" },
-      { name: "description", content: "Manage your personal account information, phone number, currency, and security credentials." },
+      { name: "description", content: "Manage your studio account credentials, security preferences, and global settings." },
     ],
   }),
   component: ProfilePage,
@@ -18,16 +18,15 @@ export const Route = createFileRoute("/_authenticated/account/profile")({
 
 function ProfilePage() {
   const [authUser, setAuthUser] = useState<any>(null);
-  const [fullName, setFullName] = useState("Vrsnmllz03");
-  const [countryCode, setCountryCode] = useState("+1");
+  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("(415) 890-2104");
+  const [countryCode, setCountryCode] = useState("+1");
   const [currency, setCurrency] = useState("USD ($)");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
 
   const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [googlePhotoUrl, setGooglePhotoUrl] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -35,7 +34,6 @@ function ProfilePage() {
         setAuthUser(data.user);
         const gPhoto = data.user.user_metadata?.picture || data.user.user_metadata?.avatar_url || "";
         const customAvatar = data.user.user_metadata?.avatar_url || gPhoto;
-        setGooglePhotoUrl(gPhoto);
         setAvatarUrl(customAvatar);
         if (data.user.email) {
           const emailName = data.user.email.split("@")[0];
@@ -85,33 +83,48 @@ function ProfilePage() {
     setShowConfirmModal(true);
   };
 
-  const handleExecuteSaveProfile = () => {
+  const handleExecuteSaveProfile = async () => {
     setShowConfirmModal(false);
     setIsSavingProfile(true);
-    setTimeout(() => {
+    try {
+      if (authUser) {
+        const fullPhone = `${countryCode} ${phone}`;
+        await supabase.auth.updateUser({
+          data: {
+            full_name: fullName,
+            phone_number: fullPhone,
+            preferred_currency: currency,
+          },
+        });
+      }
+      toast.success("Profile settings updated successfully!");
+    } catch {
+      toast.error("Failed to update profile.");
+    } finally {
       setIsSavingProfile(false);
-      toast.success("Account profile details updated successfully!");
-    }, 400);
+    }
   };
 
   const handleSendPasswordReset = async () => {
+    if (!authUser?.email) {
+      toast.error("No valid email address found.");
+      return;
+    }
     setIsSendingReset(true);
     try {
-      const email = authUser?.email || "vrsnmllz03@gmail.com";
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth`,
+      const { error } = await supabase.auth.resetPasswordForEmail(authUser.email, {
+        redirectTo: window.location.origin + "/auth",
       });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success(`Password reset instructions sent to ${email}! Please check your inbox.`);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send reset link.");
+      if (error) throw error;
+      toast.success("Password reset link sent to your email!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send reset link");
     } finally {
       setIsSendingReset(false);
     }
-  };  return (
+  };
+
+  return (
     <div className="space-y-8">
       <Link
         to="/account"
@@ -126,37 +139,29 @@ function ProfilePage() {
           Account Credentials
         </div>
         <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Profile & Account Management
+          Profile & Account Settings
         </h2>
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-          Manage your personal credentials, delivery destinations, and security settings in one place.
+          Manage your personal details, profile picture, password reset, and delivery addresses.
         </p>
       </div>
 
-      {/* SECTION 1: Personal Details & Avatar */}
       <form
         onSubmit={handleOpenConfirmModal}
         className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-4">
-          <div className="flex items-center gap-3">
-            <User className="w-4 h-4 text-accent" />
-            <h3 className="text-base font-bold text-foreground">Personal Information</h3>
-          </div>
-
-          {/* Inline Avatar Controls */}
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-foreground text-background font-bold text-lg flex items-center justify-center border border-hairline shrink-0 shadow-2xs">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                <span>{fullName.charAt(0).toUpperCase()}</span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="px-3.5 py-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
-                <span>Upload Photo</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-hairline pb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-foreground text-background font-bold text-xl flex items-center justify-center border-2 border-hairline shadow-xs shrink-0">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span>{fullName.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <label className="absolute -bottom-0.5 -right-0.5 h-6 w-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-xs cursor-pointer hover:scale-110 transition-transform">
+                <Camera className="w-3.5 h-3.5" />
                 <input
                   type="file"
                   accept="image/*"
@@ -164,20 +169,37 @@ function ProfilePage() {
                   className="hidden"
                 />
               </label>
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/30 text-muted-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
-                >
-                  Remove Photo
-                </button>
-              )}
             </div>
+
+            <div>
+              <h3 className="text-base font-bold text-foreground">{fullName || "Personal Profile"}</h3>
+              <p className="text-xs text-muted-foreground">{authUser?.email || "vrsnmllz03@gmail.com"}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="px-4 py-2 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5" />
+              <span>Upload Photo</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarFileUpload}
+                className="hidden"
+              />
+            </label>
+            {avatarUrl && (
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="px-4 py-2 rounded-full bg-surface hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/30 text-muted-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
+              >
+                Remove Photo
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Form Input Fields */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -227,9 +249,6 @@ function ProfilePage() {
                 disabled
                 className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
               />
-              <span className="text-[11px] text-muted-foreground mt-1 block">
-                Contact studio support to request an email change.
-              </span>
             </div>
 
             <div>
@@ -247,11 +266,21 @@ function ProfilePage() {
             </div>
           </div>
 
-          <div className="pt-2 flex justify-end">
+          <div className="pt-4 border-t border-hairline flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleSendPasswordReset}
+              disabled={isSendingReset}
+              className="w-full sm:w-auto px-4 py-2 rounded-full border border-hairline bg-surface hover:bg-muted/50 text-foreground text-xs font-semibold transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-accent" />
+              <span>{isSendingReset ? "Sending Reset Link..." : "Reset Password"}</span>
+            </button>
+
             <button
               type="submit"
               disabled={isSavingProfile}
-              className="px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
             >
               {isSavingProfile ? "Saving..." : "Save Profile Changes"}
             </button>
@@ -259,46 +288,8 @@ function ProfilePage() {
         </div>
       </form>
 
-      {/* SECTION 2: Security & Password Reset (Moved Upwards) */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-4">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
-          <Lock className="w-4 h-4 text-accent" />
-          Security & Authentication
-        </h3>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-              <Check className="w-4 h-4 text-emerald-600" />
-              <span>256-Bit SSL Session Encryption Active</span>
-            </div>
-            <p className="text-xs text-muted-foreground max-w-xl">
-              Password resets are authenticated via secure single-use email tokens sent to your registered email address.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleSendPasswordReset}
-            disabled={isSendingReset}
-            className="py-2.5 px-6 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
-          >
-            {isSendingReset ? (
-              <span>Sending Reset Link...</span>
-            ) : (
-              <>
-                <KeyRound className="w-4 h-4" />
-                <span>Send Password Reset Link</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* SECTION 3: Saved Shipping Destinations */}
       <SavedAddressesSection />
 
-      {/* Confirmation Modal for Profile Update */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <motion.div

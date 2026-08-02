@@ -32,18 +32,11 @@ function AccountDashboardPage() {
       badge: "1 Active Order",
     },
     {
-      title: "Profile & Security Settings",
-      description: "Manage personal credentials, phone number, currency preferences, and password reset.",
+      title: "Profile & Shipping Destinations",
+      description: "Manage your personal profile, photo, password reset, and saved delivery addresses.",
       href: "/account/profile",
       icon: User,
-      badge: "256-bit SSL",
-    },
-    {
-      title: "Saved Shipping Addresses",
-      description: "Manage default shipping and billing destinations for 1-click checkout.",
-      href: "/account/profile",
-      icon: MapPin,
-      badge: "2 Saved Locations",
+      badge: "Profile & Addresses",
     },
     {
       title: "Saved Payment Wallet",
