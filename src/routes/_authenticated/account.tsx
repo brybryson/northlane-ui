@@ -306,7 +306,7 @@ function AccountPage() {
 
     // Fetch AI Logs from Supabase if available
     supabase
-      .from("ai_conversation_logs")
+      .from("ai_conversation_logs" as any)
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
