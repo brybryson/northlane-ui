@@ -47,11 +47,13 @@ function AIConversationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("ai_conversation_logs" as any)
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
+    async function fetchLogs() {
+      try {
+        const { data } = await supabase
+          .from("ai_conversation_logs" as any)
+          .select("*")
+          .order("created_at", { ascending: false });
+
         if (data && data.length > 0) {
           const formatted: AIConversationLog[] = data.map((d: any) => ({
             id: d.id,
@@ -69,8 +71,14 @@ function AIConversationsPage() {
           }));
           setAiLogs(formatted);
         }
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error("Failed to load AI logs:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLogs();
   }, []);
 
   return (
