@@ -16,6 +16,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as WishlistRouteImport } from './routes/wishlist'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as ProductsProductIdRouteImport } from './routes/products.$productId'
@@ -67,6 +68,11 @@ const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRouteWithChildren
   '/shop': typeof ShopRoute
   '/wishlist': typeof WishlistRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$productId': typeof ProductsProductIdRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRouteWithChildren
   '/shop': typeof ShopRoute
   '/wishlist': typeof WishlistRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/admin/ai-intelligence': typeof AuthenticatedAdminAiIntelligenceRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRouteWithChildren
   '/shop': typeof ShopRoute
   '/wishlist': typeof WishlistRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$productId': typeof ProductsProductIdRoute
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/shop'
     | '/wishlist'
+    | '/account'
     | '/admin'
     | '/checkout/success'
     | '/products/$productId'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/shop'
     | '/wishlist'
+    | '/account'
     | '/checkout/success'
     | '/products/$productId'
     | '/admin/ai-intelligence'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/shop'
     | '/wishlist'
+    | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/checkout/success'
     | '/products/$productId'
@@ -381,6 +393,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/wishlist'
       preLoaderRoute: typeof WishlistRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -542,10 +561,12 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
 }
 

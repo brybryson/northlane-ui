@@ -230,15 +230,24 @@ function Nav({
                 Sign In
               </Link>
             ) : (
-              <button
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  toast.success("Signed out successfully");
-                }}
-                className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
-              >
-                Sign Out
-              </button>
+              <div className="flex items-center gap-1.5 ml-1">
+                <Link
+                  to="/account"
+                  className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition hover:bg-accent/20 cursor-pointer"
+                >
+                  <User className="h-3.5 w-3.5" />
+                  Account
+                </Link>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    toast.success("Signed out successfully");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
+                >
+                  Sign Out
+                </button>
+              </div>
             )}
 
             <Link
