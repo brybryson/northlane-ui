@@ -71,16 +71,12 @@ function ProfilePage() {
     reader.readAsDataURL(file);
   };
 
-  const handleResetToGooglePhoto = async () => {
-    if (!googlePhotoUrl) {
-      toast.info("No Google profile photo linked to this account.");
-      return;
-    }
-    setAvatarUrl(googlePhotoUrl);
+  const handleRemovePhoto = async () => {
+    setAvatarUrl("");
     await supabase.auth.updateUser({
-      data: { avatar_url: googlePhotoUrl },
+      data: { avatar_url: "" },
     });
-    toast.success("Profile picture reset to Google photo!");
+    toast.success("Profile photo removed.");
     window.location.reload();
   };
 
@@ -137,20 +133,20 @@ function ProfilePage() {
         </p>
       </div>
 
-      {/* SECTION 1: Personal Details & Photo */}
+      {/* SECTION 1: Personal Details & Avatar */}
       <form
         onSubmit={handleOpenConfirmModal}
         className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6"
       >
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
-          <User className="w-4 h-4 text-accent" />
-          Personal Details & Avatar
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline pb-4">
+          <div className="flex items-center gap-3">
+            <User className="w-4 h-4 text-accent" />
+            <h3 className="text-base font-bold text-foreground">Personal Information</h3>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Avatar Upload Card */}
-          <div className="lg:col-span-4 p-5 rounded-xl bg-surface/50 border border-hairline flex flex-col items-center text-center space-y-4">
-            <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-foreground text-background font-bold text-2xl flex items-center justify-center border border-hairline shadow-xs">
+          {/* Inline Avatar Controls */}
+          <div className="flex items-center gap-3">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-foreground text-background font-bold text-lg flex items-center justify-center border border-hairline shrink-0 shadow-2xs">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -158,14 +154,7 @@ function ProfilePage() {
               )}
             </div>
 
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-foreground block">Profile Photo</span>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Upload a custom image or sync directly with your Google account.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2 w-full pt-1">
+            <div className="flex items-center gap-2">
               <label className="px-3.5 py-1.5 rounded-full bg-foreground hover:bg-foreground/90 text-background text-xs font-bold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5">
                 <span>Upload Photo</span>
                 <input
@@ -175,105 +164,102 @@ function ProfilePage() {
                   className="hidden"
                 />
               </label>
-              {googlePhotoUrl && (
+              {avatarUrl && (
                 <button
                   type="button"
-                  onClick={handleResetToGooglePhoto}
-                  className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-muted/60 text-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
+                  onClick={handleRemovePhoto}
+                  className="px-3.5 py-1.5 rounded-full bg-surface hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/30 text-muted-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
                 >
-                  Use Google Photo
+                  Remove Photo
                 </button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Form Input Fields */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Full Name</label>
+        {/* Form Input Fields */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1 font-semibold">Full Name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1 font-semibold">Phone Number</label>
+              <div className="flex items-center rounded-xl bg-background border border-hairline focus-within:ring-1 focus-within:ring-foreground overflow-hidden">
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  className="h-10 border-0 border-r border-hairline rounded-none bg-transparent px-2.5 text-foreground text-xs font-semibold focus:outline-none cursor-pointer shrink-0"
+                >
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+63">🇵🇭 +63</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+81">🇯🇵 +81</option>
+                  <option value="+61">🇦🇺 +61</option>
+                  <option value="+65">🇸🇬 +65</option>
+                </select>
                 <input
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
-                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="h-10 flex-1 w-full border-0 bg-transparent px-3 text-foreground text-xs focus:outline-none font-semibold"
                 />
               </div>
+            </div>
+          </div>
 
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Phone Number</label>
-                <div className="flex items-center rounded-xl bg-background border border-hairline focus-within:ring-1 focus-within:ring-foreground overflow-hidden">
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="h-10 border-0 border-r border-hairline rounded-none bg-transparent px-2.5 text-foreground text-xs font-semibold focus:outline-none cursor-pointer shrink-0"
-                  >
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+63">🇵🇭 +63</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+49">🇩🇪 +49</option>
-                    <option value="+33">🇫🇷 +33</option>
-                    <option value="+81">🇯🇵 +81</option>
-                    <option value="+61">🇦🇺 +61</option>
-                    <option value="+65">🇸🇬 +65</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="h-10 flex-1 w-full border-0 bg-transparent px-3 text-foreground text-xs focus:outline-none font-semibold"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1 font-semibold">Email Address</label>
+              <input
+                type="email"
+                value={authUser?.email || "vrsnmllz03@gmail.com"}
+                disabled
+                className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
+              />
+              <span className="text-[11px] text-muted-foreground mt-1 block">
+                Contact studio support to request an email change.
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Email Address</label>
-                <input
-                  type="email"
-                  value={authUser?.email || "vrsnmllz03@gmail.com"}
-                  disabled
-                  className="w-full px-4 py-2.5 rounded-xl bg-surface border border-hairline text-muted-foreground text-xs cursor-not-allowed font-semibold"
-                />
-                <span className="text-[11px] text-muted-foreground mt-1 block">
-                  Contact studio support to request an email change.
-                </span>
-              </div>
-
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Preferred Currency</label>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer font-semibold"
-                >
-                  <option value="USD ($)">USD ($) — US Dollar</option>
-                  <option value="EUR (€)">EUR (€) — Euro</option>
-                  <option value="GBP (£)">GBP (£) — British Pound</option>
-                  <option value="CAD ($)">CAD ($) — Canadian Dollar</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={isSavingProfile}
-                className="px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1 font-semibold">Preferred Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground cursor-pointer font-semibold"
               >
-                {isSavingProfile ? "Saving..." : "Save Profile Changes"}
-              </button>
+                <option value="USD ($)">USD ($) — US Dollar</option>
+                <option value="EUR (€)">EUR (€) — Euro</option>
+                <option value="GBP (£)">GBP (£) — British Pound</option>
+                <option value="CAD ($)">CAD ($) — Canadian Dollar</option>
+              </select>
             </div>
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={isSavingProfile}
+              className="px-6 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {isSavingProfile ? "Saving..." : "Save Profile Changes"}
+            </button>
           </div>
         </div>
       </form>
 
-      {/* SECTION 2: Saved Shipping Destinations */}
-      <SavedAddressesSection />
-
-      {/* SECTION 3: Security & Password Reset */}
+      {/* SECTION 2: Security & Password Reset (Moved Upwards) */}
       <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-4">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
           <Lock className="w-4 h-4 text-accent" />
@@ -308,6 +294,9 @@ function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* SECTION 3: Saved Shipping Destinations */}
+      <SavedAddressesSection />
 
       {/* Confirmation Modal for Profile Update */}
       {showConfirmModal && (
