@@ -117,6 +117,8 @@ function ProfilePage() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<"personal" | "addresses" | "security">("personal");
+
   return (
     <div className="space-y-6">
       <Link
@@ -129,26 +131,61 @@ function ProfilePage() {
 
       <div>
         <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
-          Account Credentials
+          Account Settings
         </div>
         <h2 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-          Profile & Security Settings
+          Profile & Account Management
         </h2>
         <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-          Manage your studio account credentials, security preferences, and global settings.
+          Manage your identity details, shipping destinations, and security settings.
         </p>
       </div>
 
-      {/* 2-Column Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Left Column: Personal Information Form */}
+      {/* Clean Tab Switcher Pills */}
+      <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-hairline">
+        <button
+          type="button"
+          onClick={() => setActiveTab("personal")}
+          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+            activeTab === "personal"
+              ? "bg-foreground text-background border-foreground shadow-xs"
+              : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
+          }`}
+        >
+          Personal Details
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("addresses")}
+          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+            activeTab === "addresses"
+              ? "bg-foreground text-background border-foreground shadow-xs"
+              : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
+          }`}
+        >
+          Saved Addresses
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("security")}
+          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+            activeTab === "security"
+              ? "bg-foreground text-background border-foreground shadow-xs"
+              : "bg-surface text-muted-foreground border-hairline hover:text-foreground"
+          }`}
+        >
+          Security & Password
+        </button>
+      </div>
+
+      {/* Tab Content 1: Personal Information */}
+      {activeTab === "personal" && (
         <form
           onSubmit={handleOpenConfirmModal}
-          className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6"
+          className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6 max-w-2xl"
         >
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
-            <User className="w-4 h-4 text-accent" />
-            Personal Information
+          <h3 className="text-sm font-bold text-foreground border-b border-hairline pb-3">
+            Personal Details
           </h3>
 
           {/* Profile Photo Uploader */}
@@ -263,11 +300,15 @@ function ProfilePage() {
             </button>
           </div>
         </form>
+      )}
 
-        {/* Right Column: Security & Password Reset */}
-        <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-hairline pb-3">
-            <Lock className="w-4 h-4 text-accent" />
+      {/* Tab Content 2: Saved Addresses */}
+      {activeTab === "addresses" && <SavedAddressesSection />}
+
+      {/* Tab Content 3: Security & Password */}
+      {activeTab === "security" && (
+        <div className="p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-xs space-y-6 max-w-2xl">
+          <h3 className="text-sm font-bold text-foreground border-b border-hairline pb-3">
             Security & Authentication
           </h3>
 
@@ -290,7 +331,7 @@ function ProfilePage() {
               type="button"
               onClick={handleSendPasswordReset}
               disabled={isSendingReset}
-              className="w-full py-3 px-5 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto py-3 px-6 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSendingReset ? (
                 <span>Sending Reset Link...</span>
@@ -303,10 +344,7 @@ function ProfilePage() {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Saved Shipping Addresses Section */}
-      <SavedAddressesSection />
+      )}
 
       {/* Confirmation Modal for Profile Update */}
       {showConfirmModal && (
