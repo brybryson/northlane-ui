@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Lock,
   KeyRound,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,7 +69,7 @@ interface Order {
   estimatedDelivery: string;
   items: OrderItem[];
   shippingAddress: string;
-  timelineStep: number; // 1: Order Placed, 2: Processing, 3: In Transit, 4: Delivered
+  timelineStep: number;
 }
 
 interface Address {
@@ -256,8 +257,8 @@ function AccountPage() {
   
   // Accordion state for Delivered / Minimized orders
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({
-    "NL-89210": true, // In Transit starts expanded
-    "NL-87402": false, // Delivered starts collapsed
+    "NL-89210": true,
+    "NL-87402": false,
   });
 
   // State to control showing items > 3 per order
@@ -280,6 +281,16 @@ function AccountPage() {
   const [newAddrState, setNewAddrState] = useState("");
   const [newAddrZip, setNewAddrZip] = useState("");
 
+  // Stripe Payment Modal State
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [cardHolder, setCardHolder] = useState("Vrsnmllz03");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExp, setCardExp] = useState("");
+  const [cardCvc, setCardCvc] = useState("");
+  const [cardZip, setCardZip] = useState("");
+  const [isDefaultCard, setIsDefaultCard] = useState(true);
+  const [isAddingCard, setIsAddingCard] = useState(false);
+
   const [copiedTracking, setCopiedTracking] = useState<string | null>(null);
 
   useEffect(() => {
@@ -292,6 +303,31 @@ function AccountPage() {
         }
       }
     });
+
+    // Fetch AI Logs from Supabase if available
+    supabase
+      .from("ai_conversation_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const formatted: AIConversationLog[] = data.map((d: any) => ({
+            id: d.id,
+            date: new Date(d.created_at).toLocaleString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            topic: d.topic,
+            userPrompt: d.user_prompt,
+            aiSummary: d.ai_summary,
+            recommendedProducts: d.recommended_products || [],
+          }));
+          setAiLogs(formatted);
+        }
+      });
   }, []);
 
   const handleSignOut = async () => {
@@ -361,6 +397,48 @@ function AccountPage() {
     toast.success("New shipping address added!");
   };
 
+  const handleAddStripeCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cardNumber || !cardExp || !cardCvc) {
+      toast.error("Please enter complete card details.");
+      return;
+    }
+
+    setIsAddingCard(true);
+    setTimeout(() => {
+      const rawDigits = cardNumber.replace(/\s+/g, "");
+      const last4 = rawDigits.slice(-4) || "8888";
+      const [mStr, yStr] = cardExp.split("/");
+      const expMonth = parseInt(mStr, 10) || 12;
+      const expYear = parseInt(yStr, 10) || 2028;
+      const brand = rawDigits.startsWith("4") ? "Visa" : "Mastercard";
+
+      const newCard: PaymentMethod = {
+        id: `pm-${Date.now()}`,
+        brand,
+        last4,
+        expMonth,
+        expYear,
+        isDefault: isDefaultCard,
+      };
+
+      setPayments((prev) => {
+        if (isDefaultCard) {
+          return [...prev.map((c) => ({ ...c, isDefault: false })), newCard];
+        }
+        return [...prev, newCard];
+      });
+
+      setIsAddingCard(false);
+      setShowPaymentModal(false);
+      setCardNumber("");
+      setCardExp("");
+      setCardCvc("");
+      setCardZip("");
+      toast.success(`Stripe ${brand} ending in •••• ${last4} added to your wallet!`);
+    }, 600);
+  };
+
   const handleDeleteAddress = (id: string) => {
     setAddresses((prev) => prev.filter((a) => a.id !== id));
     toast.info("Address removed.");
@@ -405,7 +483,7 @@ function AccountPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-accent/20">
       <div>
-        {/* Navigation Header matching Shop & Landing */}
+        {/* Top Navigation Header (Integrated Explore Shop & Sign Out Buttons) */}
         <header className="sticky top-0 z-40 border-b border-hairline bg-background/90 backdrop-blur-xl transition-all duration-300">
           <div className="container-editorial flex items-center justify-between py-3.5 sm:py-4">
             <Link
@@ -446,7 +524,26 @@ function AccountPage() {
               </a>
             </nav>
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2.5">
+              {/* Integrated Top Navigation Action Buttons */}
+              <Link
+                to="/shop"
+                className="hidden sm:flex px-3.5 py-1.5 rounded-full bg-background hover:bg-surface text-foreground text-xs font-semibold border border-hairline transition-colors items-center gap-1.5 shadow-xs"
+              >
+                <Search className="w-3.5 h-3.5 text-accent" />
+                <span>Explore Shop</span>
+              </Link>
+
+              <button
+                onClick={handleSignOut}
+                className="hidden sm:flex px-3.5 py-1.5 rounded-full bg-surface hover:bg-red-500/10 text-muted-foreground hover:text-red-600 text-xs font-semibold border border-hairline transition-colors items-center gap-1.5 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+
+              <div className="h-4 w-px bg-hairline hidden sm:block mx-1" />
+
               <Link
                 to="/wishlist"
                 className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-background text-foreground transition hover:bg-surface cursor-pointer"
@@ -480,56 +577,35 @@ function AccountPage() {
         </header>
 
         {/* User Hero Banner */}
-        <section className="bg-surface border-b border-hairline py-6 sm:py-10 lg:py-12">
+        <section className="bg-surface border-b border-hairline py-6 sm:py-10">
           <div className="container-editorial">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
-              {/* User Info Avatar & Details */}
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-foreground text-background font-bold text-2xl flex items-center justify-center shadow-xs border border-hairline shrink-0">
-                  {fullName.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
-                    Customer Portal
-                  </div>
-                  <h1 className="mt-1 text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-                    {fullName}
-                  </h1>
-                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
-                    <span>{authUser?.email || "vrsnmllz03@gmail.com"}</span>
-                    <span>•</span>
-                    <span>Member since 2026</span>
-                  </p>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-foreground text-background font-bold text-2xl flex items-center justify-center shadow-xs border border-hairline shrink-0">
+                {fullName.charAt(0).toUpperCase()}
               </div>
-
-              {/* Quick Actions Header */}
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/shop"
-                  className="px-4 py-2 rounded-full bg-background hover:bg-surface text-foreground text-xs font-semibold border border-hairline transition-colors flex items-center gap-1.5 shadow-xs"
-                >
-                  <Search className="w-3.5 h-3.5 text-accent" />
-                  <span>Explore Shop</span>
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="px-4 py-2 rounded-full bg-surface hover:bg-red-500/10 text-muted-foreground hover:text-red-600 text-xs font-semibold border border-hairline transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
+              <div>
+                <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
+                  Customer Portal
+                </div>
+                <h1 className="mt-1 text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
+                  {fullName}
+                </h1>
+                <p className="mt-1 text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                  <span>{authUser?.email || "vrsnmllz03@gmail.com"}</span>
+                  <span>•</span>
+                  <span>Member since 2026</span>
+                </p>
               </div>
             </div>
 
-            {/* Category Filter Pills style matching /shop */}
+            {/* Clean Category Filter Pills (No Numbers in Titles) */}
             <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-8 pt-4 border-t border-hairline">
               {[
-                { id: "orders", label: `Orders (${orders.length})`, icon: Package },
+                { id: "orders", label: "Orders", icon: Package },
                 { id: "profile", label: "Profile & Settings", icon: User },
-                { id: "addresses", label: `Saved Addresses (${addresses.length})`, icon: MapPin },
-                { id: "payments", label: `Payment Methods (${payments.length})`, icon: CreditCard },
-                { id: "ai-history", label: `AI Conversation Log (${aiLogs.length})`, icon: Bot },
+                { id: "addresses", label: "Saved Addresses", icon: MapPin },
+                { id: "payments", label: "Payment Methods", icon: CreditCard },
+                { id: "ai-history", label: "AI Conversation Log", icon: Bot },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -626,7 +702,7 @@ function AccountPage() {
                           key={order.id}
                           className="rounded-2xl bg-background border border-hairline overflow-hidden shadow-xs space-y-0 transition-all"
                         >
-                          {/* Order Top Bar & Accordion Header */}
+                          {/* Order Top Bar */}
                           <div className="p-4 sm:p-6 bg-surface/50 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                               <div>
@@ -843,7 +919,6 @@ function AccountPage() {
                   </p>
                 </div>
 
-                {/* 2-Column Split Layout (Half-Half Space on Desktop) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                   {/* Left Column: Personal Information Form */}
                   <form
@@ -1061,7 +1136,7 @@ function AccountPage() {
               </motion.div>
             )}
 
-            {/* TAB 4: PAYMENT METHODS */}
+            {/* TAB 4: PAYMENT METHODS (With Working Add Stripe Card Modal) */}
             {activeTab === "payments" && (
               <motion.div
                 key="tab-payments"
@@ -1084,7 +1159,7 @@ function AccountPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => toast.info("Stripe card management modal opened.")}
+                    onClick={() => setShowPaymentModal(true)}
                     className="px-5 py-2.5 rounded-full bg-foreground hover:bg-foreground/90 text-background font-bold text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
@@ -1114,7 +1189,7 @@ function AccountPage() {
                         )}
                       </div>
 
-                      <div className="text-sm font-bold text-foreground tracking-widest my-2">
+                      <div className="text-sm font-bold text-foreground tracking-widest my-2 font-mono">
                         •••• •••• •••• {pm.last4}
                       </div>
 
@@ -1191,6 +1266,124 @@ function AccountPage() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Interactive Stripe Payment Card Modal Dialog */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-2xl space-y-4"
+          >
+            <div className="flex justify-between items-center border-b border-hairline pb-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-accent" />
+                <h3 className="text-base font-bold text-foreground">Add New Payment Card</h3>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddStripeCard} className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Cardholder Name</label>
+                <input
+                  type="text"
+                  placeholder="Vrsnmllz03"
+                  value={cardHolder}
+                  onChange={(e) => setCardHolder(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-semibold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1 font-semibold">Card Number</label>
+                <input
+                  type="text"
+                  placeholder="4242 •••• •••• 4242"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-mono"
+                  maxLength={19}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1 font-semibold">Exp (MM/YY)</label>
+                  <input
+                    type="text"
+                    placeholder="12/28"
+                    value={cardExp}
+                    onChange={(e) => setCardExp(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-mono"
+                    maxLength={5}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1 font-semibold">CVC</label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    value={cardCvc}
+                    onChange={(e) => setCardCvc(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-mono"
+                    maxLength={4}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1 font-semibold">Zip Code</label>
+                  <input
+                    type="text"
+                    placeholder="94107"
+                    value={cardZip}
+                    onChange={(e) => setCardZip(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-background border border-hairline text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="isDefaultCardCheck"
+                  checked={isDefaultCard}
+                  onChange={(e) => setIsDefaultCard(e.target.checked)}
+                  className="rounded border-hairline text-foreground focus:ring-foreground cursor-pointer"
+                />
+                <label htmlFor="isDefaultCardCheck" className="text-xs text-muted-foreground cursor-pointer select-none font-semibold">
+                  Set as my primary payment method
+                </label>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-hairline">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="px-4 py-2 rounded-full border border-hairline text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAddingCard}
+                  className="px-5 py-2 rounded-full bg-foreground text-background text-xs font-bold shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isAddingCard ? "Saving Card..." : "Save Card to Wallet"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
 
       {/* Confirmation Modal for Profile Update */}
       {showConfirmModal && (
