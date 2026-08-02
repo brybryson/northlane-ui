@@ -409,7 +409,7 @@ function AccountPage() {
         </header>
 
         {/* User Hero Banner */}
-        <section className="border-b border-hairline bg-surface py-6 sm:py-10 lg:py-12">
+        <section className="bg-surface border-b border-hairline py-6 sm:py-10 lg:py-12">
           <div className="container-editorial">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
               {/* User Info Avatar & Details */}
@@ -451,14 +451,14 @@ function AccountPage() {
               </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto mt-8 pt-4 scrollbar-none border-t border-hairline">
+            {/* Clean Category Filter Pills style matching /shop */}
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-8 pt-4 border-t border-hairline">
               {[
-                { id: "orders", label: "Orders & Tracking", icon: Package, count: orders.length },
+                { id: "orders", label: `Orders (${orders.length})`, icon: Package },
                 { id: "profile", label: "Profile & Settings", icon: User },
-                { id: "addresses", label: "Saved Addresses", icon: MapPin, count: addresses.length },
-                { id: "payments", label: "Payment Methods", icon: CreditCard, count: payments.length },
-                { id: "ai-history", label: "AI Conversation Log", icon: Bot, count: aiLogs.length },
+                { id: "addresses", label: `Saved Addresses (${addresses.length})`, icon: MapPin },
+                { id: "payments", label: `Payment Methods (${payments.length})`, icon: CreditCard },
+                { id: "ai-history", label: `AI Conversation Log (${aiLogs.length})`, icon: Bot },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -466,25 +466,14 @@ function AccountPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`px-4 py-2.5 rounded-full text-xs font-semibold uppercase tracking-[0.08em] transition-all duration-200 flex items-center gap-2 whitespace-nowrap cursor-pointer border ${
+                    className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] transition-all flex items-center gap-2 cursor-pointer border ${
                       isActive
                         ? "bg-foreground text-background border-foreground shadow-xs"
-                        : "bg-background text-muted-foreground hover:text-foreground border-hairline hover:border-foreground/30"
+                        : "border-hairline bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span>{tab.label}</span>
-                    {tab.count !== undefined && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          isActive
-                            ? "bg-background/20 text-background"
-                            : "bg-surface text-accent border border-accent/20"
-                        }`}
-                      >
-                        {tab.count}
-                      </span>
-                    )}
                   </button>
                 );
               })}
@@ -651,7 +640,7 @@ function AccountPage() {
                               />
                               <div className="min-w-0">
                                 <h5 className="text-xs font-bold tracking-tight text-foreground truncate">{item.name}</h5>
-                                <span className="text-[11px] text-muted-foreground block mt-0.5">
+                                <span className="text-[11px] text-muted-foreground block mt-0.5 font-semibold">
                                   SKU: {item.sku} • Qty: {item.qty}
                                 </span>
                               </div>
