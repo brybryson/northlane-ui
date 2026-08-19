@@ -8,17 +8,45 @@ export function useAuthUser() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
+
+    // Get current session from local storage immediately to prevent profile disappearance
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      setUser(data.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      }
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
+
+    // Validate session in background without clearing existing user state on network delay
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
+      if (data.user) {
+        setUser(data.user);
+      }
     });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    const handleCustomUpdate = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        if (!mounted) return;
+        if (data.user) {
+          setUser(data.user);
+        }
+      });
+    };
+
+    window.addEventListener("northlane_user_profile_updated", handleCustomUpdate);
+
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
+      window.removeEventListener("northlane_user_profile_updated", handleCustomUpdate);
     };
   }, []);
 

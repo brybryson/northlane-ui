@@ -16,6 +16,10 @@ import {
   Menu,
   X,
   Heart,
+  RotateCcw,
+  LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
 import { useCart } from "../context/cart-context";
 import { Button } from "../components/ui/button";
@@ -24,6 +28,7 @@ import { toast } from "sonner";
 import { Footer } from "../components/layout/Footer";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +62,7 @@ function CartPage() {
     setIsOpen: openCartDrawer,
   } = useCart();
   const [couponCode, setCouponCode] = useState("");
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleApplyCoupon = (e: React.FormEvent) => {
@@ -156,24 +162,47 @@ function CartPage() {
                 <span className="hidden sm:inline">Studio Bag</span> ({itemCount})
               </button>
 
-              {!user ? (
-                <Link
-                  to="/auth"
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-foreground/40 hover:bg-muted/30 cursor-pointer"
-                >
-                  Sign In
-                </Link>
-              ) : (
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
-                  }}
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
-                >
-                  Sign Out
-                </button>
-              )}
+              {(() => {
+                const userAvatar =
+                  user?.user_metadata?.avatar_url !== undefined && user?.user_metadata?.avatar_url !== null
+                    ? user.user_metadata.avatar_url
+                    : (user?.user_metadata?.picture || "");
+
+                return !user ? (
+                  <Link
+                    to="/auth"
+                    className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 hover:bg-muted/40 transition cursor-pointer shadow-xs"
+                    title="Sign In"
+                    aria-label="Sign In"
+                  >
+                    <LogIn className="h-4 w-4 text-accent" />
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSignOutModalOpen(true)}
+                      className="p-1.5 text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                      title="Sign Out"
+                      aria-label="Sign Out"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+
+                    <Link
+                      to="/account"
+                      className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs shrink-0"
+                      title="Account Profile"
+                      aria-label="Account Profile"
+                    >
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="User Profile" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </Link>
+                  </div>
+                );
+              })()}
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -230,12 +259,11 @@ function CartPage() {
                 </Link>
               ) : (
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     setMobileMenuOpen(false);
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
+                    setSignOutModalOpen(true);
                   }}
-                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-muted-foreground hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 mt-1"
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-muted-foreground hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 mt-1 cursor-pointer"
                 >
                   Sign Out
                 </button>
@@ -290,22 +318,28 @@ function CartPage() {
         {/* Main Content Body */}
         <main className="container-editorial py-8 sm:py-12">
           {items.length === 0 ? (
-            <div className="py-12 sm:py-16 text-center flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
-              <div className="h-16 w-16 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted-foreground shadow-xs">
-                <ShoppingBag className="h-8 w-8 opacity-40" />
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-xl font-bold text-foreground tracking-tight">Your studio bag is empty</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-xs leading-relaxed">
-                  Discover studio-grade mechanical keyboards, precision mice, and ergonomic desks in our catalog.
-                </p>
-              </div>
-              <Button
+            <div className="py-16 sm:py-24 text-center flex flex-col items-center justify-center max-w-xl mx-auto">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent mb-2">
+                Studio Catalog
+              </span>
+              
+              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-3">
+                Your studio bag is empty
+              </h3>
+              
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-lg sm:max-w-xl leading-relaxed mb-6">
+                Discover studio-grade mechanical keyboards, acoustic monitors, precision mouse, and ergonomic desks in our catalog.
+              </p>
+              
+              <button
                 onClick={() => navigate({ to: "/shop" })}
-                className="mt-2 rounded-full px-6 py-2.5 text-xs font-bold shadow-xs cursor-pointer bg-foreground text-background hover:bg-foreground/90"
+                className="group inline-flex items-center gap-2 rounded-full bg-foreground text-background px-7 py-3 text-xs sm:text-sm font-semibold shadow-sm transition-all duration-300 hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
               >
-                Explore Shop Catalog
-              </Button>
+                <span>Explore Shop Catalog</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -466,16 +500,23 @@ function CartPage() {
                     )}
                     <p className="text-[11px] text-muted-foreground">Try code <span className="font-mono font-bold text-foreground">STUDIO20</span> for 20% off.</p>
                   </div>
-
-                  <Button
-                    onClick={() => navigate({ to: "/checkout" })}
-                    className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-bold text-sm rounded-full flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    Proceed to Checkout
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {items.length > 0 && (
+            <div className="pt-8 flex items-center justify-between">
+              <Link to="/shop" className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5">
+                <ArrowLeft className="h-4 w-4" /> Continue Shopping
+              </Link>
+              <Button
+                onClick={() => navigate({ to: "/checkout" })}
+                className="h-12 px-8 bg-foreground text-background hover:bg-foreground/90 font-bold text-xs rounded-full flex items-center justify-center gap-2 shadow-md cursor-pointer ml-auto"
+              >
+                Proceed to Checkout
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </main>
@@ -483,6 +524,7 @@ function CartPage() {
 
       <Footer />
       <SignUpNoticeModal isOpen={signUpNoticeOpen} onClose={() => setSignUpNoticeOpen(false)} />
+      <SignOutConfirmModal isOpen={signOutModalOpen} onClose={() => setSignOutModalOpen(false)} />
       <AIShoppingAssistant
         onAddToCart={handleAIAssistantAddToCart}
         onShowSignUpNotice={() => setSignUpNoticeOpen(true)}

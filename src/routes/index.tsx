@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion, AnimatePresence } from "motion/react";
@@ -26,6 +26,9 @@ import {
   CheckCircle2,
   Layers,
   Award,
+  LogOut,
+  LogIn,
+  Clock,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -34,6 +37,7 @@ import { useAuthUser } from "@/hooks/use-auth-user";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
 import { useCart } from "@/context/cart-context";
 
@@ -144,6 +148,65 @@ function Nav({
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuthUser();
   const { setIsOpen, itemCount } = useCart();
+  const navigate = useNavigate();
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
+
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("northlane_recent_searches");
+      return saved ? JSON.parse(saved) : ["Aster 65 Keyboard", "Precision Mouse", "Walnut Standing Desk"];
+    } catch {
+      return ["Aster 65 Keyboard", "Precision Mouse", "Walnut Standing Desk"];
+    }
+  });
+
+  const shopCategories = [
+    "Keyboards",
+    "Mouse",
+    "Audio",
+    "Monitors",
+    "Desks",
+    "Seating",
+    "Desk Accessories",
+  ];
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    const term = searchQuery.trim();
+
+    setRecentSearches((prev) => {
+      const updated = [term, ...prev.filter((item) => item.toLowerCase() !== term.toLowerCase())].slice(0, 5);
+      try {
+        localStorage.setItem("northlane_recent_searches", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    setSearchOpen(false);
+    navigate({ to: "/shop", search: { q: term } });
+  };
+
+  const handleSelectSearchTerm = (term: string) => {
+    setRecentSearches((prev) => {
+      const updated = [term, ...prev.filter((item) => item.toLowerCase() !== term.toLowerCase())].slice(0, 5);
+      try {
+        localStorage.setItem("northlane_recent_searches", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    setSearchQuery(term);
+    setSearchOpen(false);
+    navigate({ to: "/shop", search: { q: term } });
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches([]);
+    try {
+      localStorage.removeItem("northlane_recent_searches");
+    } catch {}
+  };
 
   const links = [
     { label: "Shop", href: "/shop", isRoute: true },
@@ -191,15 +254,11 @@ function Nav({
             <IconBtn label="Search" onClick={() => setSearchOpen(true)}>
               <Search className="h-4 w-4" />
             </IconBtn>
-            <IconBtn
-              label="Wishlist"
-              onClick={() => {
-                if (!user) {
-                  onShowSignUpNotice();
-                } else {
-                  toast.info(`Wishlist contains ${wishlistCount} saved item(s)`);
-                }
-              }}
+            <Link
+              to="/wishlist"
+              aria-label="Wishlist"
+              title="Wishlist"
+              className="p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
             >
               <div className="relative">
                 <Heart className="h-4 w-4" />
@@ -209,7 +268,7 @@ function Nav({
                   </span>
                 )}
               </div>
-            </IconBtn>
+            </Link>
             <IconBtn label="Cart" onClick={() => setIsOpen(true)}>
               <div className="relative">
                 <ShoppingBag className="h-4 w-4" />
@@ -221,40 +280,47 @@ function Nav({
               </div>
             </IconBtn>
 
-            {!user ? (
-              <Link
-                to="/auth"
-                className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-foreground/40 hover:bg-muted/30 cursor-pointer"
-              >
-                Sign In
-              </Link>
-            ) : (
-              <div className="flex items-center gap-1.5 ml-1">
-                <Link
-                  to="/account"
-                  className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent transition hover:bg-accent/20 cursor-pointer"
-                >
-                  <User className="h-3.5 w-3.5" />
-                  Account
-                </Link>
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
-                  }}
-                  className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
+            {(() => {
+              const userAvatar =
+                user?.user_metadata?.avatar_url !== undefined && user?.user_metadata?.avatar_url !== null
+                  ? user.user_metadata.avatar_url
+                  : (user?.user_metadata?.picture || "");
 
-            <Link
-              to="/shop"
-              className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition hover:bg-foreground/90 hover:shadow-sm"
-            >
-              Shop Catalog <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+              return !user ? (
+                <Link
+                  to="/auth"
+                  className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 hover:bg-muted/40 transition cursor-pointer shadow-xs"
+                  title="Sign In"
+                  aria-label="Sign In"
+                >
+                  <LogIn className="h-4 w-4 text-accent" />
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSignOutModalOpen(true)}
+                    className="p-1.5 text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                    title="Sign Out"
+                    aria-label="Sign Out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+
+                  <Link
+                    to="/account"
+                    className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs shrink-0"
+                    title="Account Profile"
+                    aria-label="Account Profile"
+                  >
+                    {userAvatar ? (
+                      <img src={userAvatar} alt="User Profile" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
+                  </Link>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
@@ -279,142 +345,120 @@ function Nav({
             </button>
           </div>
         </div>
-      </header>
 
-      {/* Mobile Drawer Menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="sticky top-[61px] z-40 overflow-hidden border-b border-hairline bg-background/95 backdrop-blur-2xl lg:hidden"
-          >
-            <div className="container-editorial py-6 space-y-4">
-              <nav className="flex flex-col space-y-3">
-                {links.map((l) => (
-                  <a
-                    key={l.label}
-                    href={l.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between py-2 text-lg font-medium text-foreground transition hover:text-accent"
-                  >
-                    <span>{l.label}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </a>
-                ))}
-              </nav>
-
-              <div className="pt-4 border-t border-hairline flex flex-col gap-3">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setSearchOpen(true);
-                  }}
-                  className="flex items-center gap-3 rounded-full border border-border px-4 py-2.5 text-sm text-muted-foreground"
-                >
-                  <Search className="h-4 w-4" />
-                  Search products or workspace edits...
-                </button>
-                <a
-                  href="#collections"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-full bg-foreground py-3 text-sm font-medium text-background"
-                >
-                  Explore Collections <ArrowRight className="h-4 w-4" />
-                </a>
-
-                {!user ? (
-                  <Link
-                    to="/auth"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-foreground hover:border-foreground/40 hover:bg-muted/30"
-                  >
-                    Sign In / Create Account
-                  </Link>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      setMobileMenuOpen(false);
-                      await supabase.auth.signOut();
-                      toast.success("Signed out successfully");
-                    }}
-                    className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-muted-foreground hover:border-foreground/40 hover:text-foreground hover:bg-muted/30"
-                  >
-                    Sign Out
-                  </button>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick Search Modal */}
-      <AnimatePresence>
-        {searchOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-20 backdrop-blur-sm"
-          >
+        {/* Quick Search Panel (Positioned directly below the navbar row) */}
+        <AnimatePresence>
+          {searchOpen && (
             <motion.div
-              initial={{ scale: 0.95, y: -20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: -20 }}
-              className="w-full max-w-xl overflow-hidden rounded-3xl border border-hairline bg-background p-6 shadow-2xl"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="overflow-hidden border-t border-hairline bg-background/98 backdrop-blur-2xl py-4 sm:py-5 shadow-xl"
             >
-              <div className="flex items-center justify-between border-b border-hairline pb-4">
-                <div className="flex flex-1 items-center gap-3">
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search keyboard, headphones, desk accessories..."
-                    className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
-                    autoFocus
-                  />
-                </div>
-                <button
-                  onClick={() => setSearchOpen(false)}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              <div className="container-editorial space-y-4">
+                <form onSubmit={handleSearchSubmit} className="flex items-center justify-between gap-3">
+                  <div className="flex flex-1 items-center gap-3 bg-surface/70 rounded-full border border-hairline px-4 py-2.5 shadow-xs focus-within:border-foreground/50 transition">
+                    <Search className="h-4 w-4 text-accent shrink-0" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search keyboard, headphones, precision mouse, ergonomic desk..."
+                      className="w-full bg-transparent text-xs sm:text-sm outline-none placeholder:text-muted-foreground text-foreground font-medium"
+                      autoFocus
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="p-1 rounded-full text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
 
-              <div className="mt-6">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground mb-3">
-                  Suggested Searches
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    "Aster 65 Keyboard",
-                    "Nordic Wireless Mouse",
-                    "Focus Desk Walnut",
-                    "Halo Headphones",
-                    "Brass Desk Lamp",
-                  ].map((term) => (
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
-                      key={term}
-                      onClick={() => {
-                        setSearchQuery(term);
-                        toast.info(`Searching for "${term}"`);
-                        setSearchOpen(false);
-                      }}
-                      className="rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs text-muted-foreground transition hover:border-foreground hover:text-foreground"
+                      type="submit"
+                      className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background hover:bg-foreground/90 transition shadow-xs cursor-pointer"
                     >
-                      {term}
+                      Search <ArrowRight className="h-3.5 w-3.5" />
                     </button>
-                  ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setSearchOpen(false)}
+                      className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface transition cursor-pointer"
+                      aria-label="Close search"
+                      title="Close search"
+                    >
+                      <X className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
+                </form>
+
+                {/* Recent Searches & Shop Categories */}
+                <div className={`pt-3 border-t border-hairline/50 text-xs ${recentSearches.length > 0 ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "w-full"}`}>
+                  {/* Recent & Popular Searches (Only rendered if available) */}
+                  {recentSearches.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold uppercase tracking-[0.16em] text-[10px] text-muted-foreground flex items-center gap-1.5">
+                          <Clock className="w-3 h-3 text-accent" /> Recent & Popular Searches
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleClearRecentSearches}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {recentSearches.map((term) => (
+                          <button
+                            key={term}
+                            type="button"
+                            onClick={() => handleSelectSearchTerm(term)}
+                            className="inline-flex items-center gap-1 rounded-full border border-hairline/60 bg-surface/50 px-3 py-1 text-xs text-foreground/80 transition hover:border-foreground/40 hover:text-foreground hover:bg-surface cursor-pointer"
+                          >
+                            <span>{term}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shop Catalog Categories */}
+                  <div>
+                    <div className="mb-2">
+                      <span className="font-bold uppercase tracking-[0.16em] text-[10px] text-muted-foreground flex items-center gap-1.5">
+                        <SlidersHorizontal className="w-3 h-3 text-accent" /> Shop Categories
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {shopCategories.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => handleSelectSearchTerm(cat)}
+                          className="rounded-full border border-hairline/60 bg-surface/50 px-3 py-1 text-xs font-medium text-accent transition hover:border-accent hover:bg-accent/10 cursor-pointer"
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </header>
+
+      <SignOutConfirmModal isOpen={signOutModalOpen} onClose={() => setSignOutModalOpen(false)} />
     </>
   );
 }

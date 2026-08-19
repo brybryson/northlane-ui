@@ -15,6 +15,10 @@ import {
   SlidersHorizontal,
   Menu,
   X,
+  LogOut,
+  LogIn,
+  User,
+  Search,
 } from "lucide-react";
 import { CATALOG_PRODUCTS, CatalogProduct } from "../lib/products.data";
 import { useCart } from "../context/cart-context";
@@ -25,6 +29,67 @@ import { useAuthUser } from "@/hooks/use-auth-user";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
+
+interface AIRecommendation {
+  product: CatalogProduct;
+  matchScore: number;
+  aiReason: string;
+}
+
+function getAIRecommendedProducts(
+  wishlist: CatalogProduct[],
+  allProducts: CatalogProduct[],
+  limit = 3
+): AIRecommendation[] {
+  const wishlistIds = new Set(wishlist.map((p) => p.id));
+  const available = allProducts.filter((p) => !wishlistIds.has(p.id));
+
+  if (available.length === 0) return [];
+
+  const savedCategories = new Set(wishlist.map((p) => p.category));
+
+  const styleCounts: Record<string, number> = {};
+  wishlist.forEach((p) => {
+    const style = p.attributes?.workspaceStyle;
+    if (style) styleCounts[style] = (styleCounts[style] || 0) + 1;
+  });
+  const dominantStyle = Object.entries(styleCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  const scored = available.map((product) => {
+    let score = 78;
+    let reason = "AI Recommended Studio Essential";
+
+    const isNewCategory = !savedCategories.has(product.category);
+    if (wishlist.length > 0 && isNewCategory) {
+      score += 12;
+      const primarySaved = wishlist[0];
+      reason = `Pairs with your saved ${primarySaved.name}`;
+    } else if (wishlist.length > 0) {
+      reason = `Matches your saved ${product.category} preferences`;
+    }
+
+    if (dominantStyle && product.attributes?.workspaceStyle === dominantStyle) {
+      score += 6;
+      if (wishlist.length > 0 && isNewCategory) {
+        reason = `Matches your ${dominantStyle} workspace aesthetic`;
+      }
+    }
+
+    if (product.rating >= 4.8) score += 3;
+    if (product.isBestSeller) score += 2;
+
+    const matchScore = Math.min(99, Math.max(86, score));
+
+    return {
+      product,
+      matchScore,
+      aiReason: reason,
+    };
+  });
+
+  scored.sort((a, b) => b.matchScore - a.matchScore);
+  return scored.slice(0, limit);
+}
 
 export const Route = createFileRoute("/wishlist")({
   head: () => ({
@@ -139,9 +204,7 @@ function WishlistPage() {
     openCartDrawer(true);
   };
 
-  const recommendedItems = CATALOG_PRODUCTS.filter(
-    (p) => !wishlistIds.includes(p.id)
-  ).slice(0, 3);
+  const aiRecommendations = getAIRecommendedProducts(wishlistProducts, CATALOG_PRODUCTS, 3);
 
   function formatPrice(amount: number): string {
     return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -194,43 +257,80 @@ function WishlistPage() {
             <div className="flex items-center justify-end gap-2">
               <Link
                 to="/wishlist"
-                className="relative flex items-center justify-center h-8 w-8 rounded-full border border-accent bg-accent/15 text-accent transition cursor-pointer"
+                className="relative flex items-center justify-center p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
                 aria-label="Wishlist"
+                title="Wishlist"
               >
-                <Heart className="h-4 w-4 fill-accent text-accent" />
-                {wishlistProducts.length > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                    {wishlistProducts.length}
-                  </span>
-                )}
+                <div className="relative">
+                  <Heart className="h-4 w-4 text-foreground" />
+                  {wishlistProducts.length > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+                      {wishlistProducts.length}
+                    </span>
+                  )}
+                </div>
               </Link>
 
               <button
                 onClick={() => openCartDrawer(true)}
-                className="relative flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:border-foreground/30 transition shadow-xs cursor-pointer"
+                className="relative flex items-center justify-center p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                aria-label="Studio Bag"
+                title="Studio Bag"
               >
-                <ShoppingBag className="h-4 w-4" />
-                <span className="hidden sm:inline">Studio Bag</span> ({itemCount})
+                <div className="relative">
+                  <ShoppingBag className="h-4 w-4" />
+                  {itemCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      {itemCount}
+                    </span>
+                  )}
+                </div>
               </button>
 
-              {!user ? (
-                <Link
-                  to="/auth"
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-foreground/40 hover:bg-muted/30 cursor-pointer"
-                >
-                  Sign In
-                </Link>
-              ) : (
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
-                  }}
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
-                >
-                  Sign Out
-                </button>
-              )}
+              {(() => {
+                const userAvatar =
+                  user?.user_metadata?.avatar_url !== undefined && user?.user_metadata?.avatar_url !== null
+                    ? user.user_metadata.avatar_url
+                    : (user?.user_metadata?.picture || "");
+
+                return !user ? (
+                  <Link
+                    to="/auth"
+                    className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 hover:bg-muted/40 transition cursor-pointer shadow-xs"
+                    title="Sign In"
+                    aria-label="Sign In"
+                  >
+                    <LogIn className="h-4 w-4 text-accent" />
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        toast.success("Signed out successfully");
+                      }}
+                      className="p-1.5 text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                      title="Sign Out"
+                      aria-label="Sign Out"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+
+                    <Link
+                      to="/account"
+                      className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs shrink-0"
+                      title="Account Profile"
+                      aria-label="Account Profile"
+                    >
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="User Profile" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </Link>
+                  </div>
+                );
+              })()}
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -308,23 +408,22 @@ function WishlistPage() {
         {/* Wishlist Main Catalog Grid */}
         <main className="container-editorial py-8 sm:py-12">
           {wishlistProducts.length === 0 ? (
-            <div className="rounded-[2.5rem] border border-hairline bg-surface/40 p-8 sm:p-16 text-center flex flex-col items-center justify-center space-y-5 max-w-lg mx-auto my-8 shadow-sm">
-              <div className="h-20 w-20 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted-foreground shadow-xs">
-                <ShoppingBag className="h-9 w-9 opacity-30" />
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-xl font-bold text-foreground">Your wishlist is empty</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-xs leading-relaxed">
-                  Browse our catalog and click the heart icon on any item to save it to your personal studio setup list.
-                </p>
-              </div>
-              <Button
+            <div className="py-16 sm:py-24 text-center flex flex-col items-center justify-center max-w-lg mx-auto">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground/30 mb-4" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-accent mb-2">
+                Saved Equipment
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-3">Your wishlist is empty</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-sm leading-relaxed mb-6">
+                Browse our catalog and click the heart icon on any item to save it to your personal studio setup list.
+              </p>
+              <button
                 onClick={() => navigate({ to: "/shop" })}
-                className="mt-2 rounded-full px-6 py-2.5 text-xs font-bold shadow-md cursor-pointer"
+                className="group inline-flex items-center gap-2 rounded-full bg-foreground text-background px-7 py-3 text-xs sm:text-sm font-semibold shadow-sm transition-all duration-300 hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
               >
-                <Sparkles className="h-4 w-4 mr-2 text-accent" />
-                Explore Shop Catalog
-              </Button>
+                <span>Explore Shop Catalog</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
             </div>
           ) : (
             <div className="space-y-10">
@@ -429,44 +528,61 @@ function WishlistPage() {
                 ))}
               </div>
 
-              {/* Recommended Curated Gear */}
-              {recommendedItems.length > 0 && (
+              {/* AI Recommended Curated Gear */}
+              {aiRecommendations.length > 0 && (
                 <div className="border-t border-hairline pt-12">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
                     <div>
-                      <span className="text-xs font-bold uppercase tracking-wider text-accent">
-                        Recommended Additions
-                      </span>
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent mb-1">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        <span>AI Recommendation Engine</span>
+                      </div>
                       <h2 className="text-xl font-bold tracking-tight text-foreground">
                         Complete Your Studio Configuration
                       </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Smart recommendations generated based on your saved products and setup profile.
+                      </p>
                     </div>
                     <Link
                       to="/shop"
-                      className="text-xs font-bold text-foreground hover:text-accent transition-colors flex items-center gap-1"
+                      className="text-xs font-bold text-foreground hover:text-accent transition-colors flex items-center gap-1 shrink-0"
                     >
-                      View Catalog <ArrowRight className="h-3.5 w-3.5" />
+                      View Full Catalog <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    {recommendedItems.map((p) => (
+                    {aiRecommendations.map(({ product: p, matchScore, aiReason }) => (
                       <div
                         key={p.id}
-                        className="rounded-2xl border border-hairline bg-surface/30 p-4 flex items-center gap-4 hover:border-foreground/20 transition-all"
+                        className="group rounded-2xl border border-hairline bg-surface/30 p-4 flex flex-col justify-between hover:border-foreground/20 hover:bg-surface/50 transition-all shadow-2xs"
                       >
-                        <div className="h-16 w-16 rounded-xl border border-hairline bg-background overflow-hidden shrink-0">
-                          <img src={p.img} alt={p.name} className="h-full w-full object-cover" />
+                        <div className="flex items-start gap-4">
+                          <div className="h-16 w-16 rounded-xl border border-hairline bg-background overflow-hidden shrink-0">
+                            <img src={p.img} alt={p.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="inline-flex items-center rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
+                                {matchScore}% Match
+                              </span>
+                              <span className="text-[10px] text-muted-foreground uppercase font-semibold">{p.category}</span>
+                            </div>
+                            <h4 className="text-xs font-bold text-foreground truncate">{p.name}</h4>
+                            <p className="text-[11px] font-semibold text-foreground">{formatPrice(p.price)}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-foreground truncate">{p.name}</h4>
-                          <p className="text-[11px] font-semibold text-accent mt-0.5">{formatPrice(p.price)}</p>
+
+                        <div className="mt-3 pt-3 border-t border-hairline/60 flex items-center justify-between gap-2">
+                          <p className="text-[10px] text-muted-foreground line-clamp-1 italic">{aiReason}</p>
                           <Link
                             to="/products/$productId"
                             params={{ productId: p.id }}
-                            className="text-[10px] font-bold text-muted-foreground hover:text-foreground mt-1 inline-block"
+                            className="text-[11px] font-bold text-accent hover:underline shrink-0 flex items-center gap-0.5"
                           >
-                            Explore Product →
+                            <span>Explore</span>
+                            <ArrowRight className="h-3 w-3" />
                           </Link>
                         </div>
                       </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   id: string;
@@ -51,16 +52,58 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOpen, setIsOpen] = useState(false);
   const [coupon, setCoupon] = useState<Coupon | null>(null);
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage ONLY if authenticated, otherwise reset to 0 items
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setItems(JSON.parse(saved));
+    const syncCartWithAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data?.user) {
+        setItems([]);
+        setCoupon(null);
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+      } else {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            setItems(JSON.parse(saved));
+          }
+        } catch {}
       }
-    } catch (e) {
-      console.error("Failed to load cart from localStorage", e);
-    }
+    };
+
+    syncCartWithAuth();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session?.user) {
+        setItems([]);
+        setCoupon(null);
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+      } else {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            setItems(JSON.parse(saved));
+          }
+        } catch {}
+      }
+    });
+
+    const handleCartCleared = () => {
+      setItems([]);
+      setCoupon(null);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    };
+
+    window.addEventListener("northlane_cart_cleared", handleCartCleared);
+    return () => {
+      sub.subscription.unsubscribe();
+      window.removeEventListener("northlane_cart_cleared", handleCartCleared);
+    };
   }, []);
 
   // Sync cart to localStorage on changes

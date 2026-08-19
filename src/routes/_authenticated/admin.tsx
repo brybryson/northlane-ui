@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isAdmin } from "@/lib/cms.functions";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 import {
   Loader2, LogOut, Package, ShoppingCart, Users, Layers, Sparkles,
   TrendingUp, BarChart3, Settings, Activity, PenTool, Workflow, Tag,
@@ -125,6 +126,7 @@ function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   // Mobile: drawer open state
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
 
   useEffect(() => {
     checkAdmin({})
@@ -138,9 +140,8 @@ function AdminLayout() {
       });
   }, [checkAdmin]);
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+  function handleSignOut() {
+    setSignOutModalOpen(true);
   }
 
   if (!adminChecked) {
@@ -301,6 +302,12 @@ function AdminLayout() {
           </div>
         </main>
       </div>
+
+      <SignOutConfirmModal
+        isOpen={signOutModalOpen}
+        onClose={() => setSignOutModalOpen(false)}
+        onConfirmSignOut={() => navigate({ to: "/auth", replace: true })}
+      />
     </div>
   );
 }

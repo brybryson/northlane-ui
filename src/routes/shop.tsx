@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useMemo, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Search,
   SlidersHorizontal,
@@ -13,6 +13,10 @@ import {
   Menu,
   Heart,
   User,
+  LogOut,
+  LogIn,
+  RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import { CATALOG_PRODUCTS, CatalogProduct } from "../lib/products.data";
 import { Button } from "../components/ui/button";
@@ -21,11 +25,21 @@ import { toast } from "sonner";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
 
 import { useCart } from "@/context/cart-context";
 
+type ShopSearch = {
+  q?: string;
+};
+
 export const Route = createFileRoute("/shop")({
+  validateSearch: (search: Record<string, unknown>): ShopSearch => {
+    return {
+      q: search.q ? String(search.q) : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Shop Studio Catalog — Northlane Workspace Essentials" },
@@ -47,9 +61,18 @@ export const Route = createFileRoute("/shop")({
 
 function ShopPage() {
   const { user } = useAuthUser();
+  const searchParams = Route.useSearch();
+  const navigate = useNavigate();
   const { addToCart, setIsOpen: openCartDrawer, itemCount: totalCartCount } = useCart();
   const [signUpNoticeOpen, setSignUpNoticeOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.q || "");
+
+  useEffect(() => {
+    if (searchParams.q !== undefined) {
+      setSearchQuery(searchParams.q);
+    }
+  }, [searchParams.q]);
+
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedPersona, setSelectedPersona] = useState<string>("All");
   const [selectedBadge, setSelectedBadge] = useState<string>("All");
@@ -60,6 +83,7 @@ function ShopPage() {
   const [quickViewProduct, setQuickViewProduct] = useState<CatalogProduct | null>(null);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const wishlistCount = wishlistIds.length;
   const [filtersExpanded, setFiltersExpanded] = useState(false);
@@ -88,6 +112,26 @@ function ShopPage() {
   ];
   const badges = ["All", "Best Seller", "New Arrival", "On Sale", "Staff Pick"];
 
+  useEffect(() => {
+    const syncWishlist = () => {
+      try {
+        const saved = localStorage.getItem("northlane_wishlist");
+        if (saved) {
+          setWishlistIds(JSON.parse(saved));
+        } else {
+          setWishlistIds([]);
+        }
+      } catch {
+        setWishlistIds([]);
+      }
+    };
+    syncWishlist();
+    window.addEventListener("northlane_wishlist_updated", syncWishlist);
+    return () => {
+      window.removeEventListener("northlane_wishlist_updated", syncWishlist);
+    };
+  }, [user]);
+
   function handleAddToCart(product: CatalogProduct, qty: number = 1) {
     if (!user) {
       setSignUpNoticeOpen(true);
@@ -109,9 +153,13 @@ function ShopPage() {
       setSignUpNoticeOpen(true);
       return;
     }
-    setWishlistIds((prev) => 
-      prev.includes(p.id) ? prev.filter((id) => id !== p.id) : [...prev, p.id]
-    );
+    setWishlistIds((prev) => {
+      const updated = prev.includes(p.id) ? prev.filter((id) => id !== p.id) : [...prev, p.id];
+      try {
+        localStorage.setItem("northlane_wishlist", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   }
 
   // Natural Language & Filtering Logic
@@ -207,63 +255,109 @@ function ShopPage() {
             </nav>
 
             <div className="flex items-center justify-end gap-2">
-              <Link
-                to="/"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mr-2"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" /> Back Home
-              </Link>
-
-              <Link
-                to="/wishlist"
-                className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/30 transition cursor-pointer"
-                aria-label="Wishlist"
-              >
-                <div className="relative">
-                  <Heart className="h-4 w-4 text-muted-foreground hover:text-accent transition-colors" />
-                  {wishlistCount > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                      {wishlistCount}
-                    </span>
-                  )}
-                </div>
-              </Link>
-
               <button
-                onClick={() => openCartDrawer(true)}
-                className="relative flex items-center gap-2 rounded-full border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:border-foreground/30 transition shadow-xs cursor-pointer"
+                type="button"
+                onClick={() => {
+                  const searchEl = document.getElementById("shop-search-input");
+                  if (searchEl) {
+                    searchEl.focus();
+                    searchEl.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }
+                }}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label="Search Catalog"
+                title="Search Catalog"
               >
-                <ShoppingBag className="h-4 w-4" />
-                <span className="hidden sm:inline">Studio Bag</span> ({totalCartCount})
+                <Search className="h-4 w-4" />
               </button>
 
               {!user ? (
-                <Link
-                  to="/auth"
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-foreground/40 hover:bg-muted/30 cursor-pointer"
+                <button
+                  type="button"
+                  onClick={() => setSignUpNoticeOpen(true)}
+                  className="p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                  aria-label="Wishlist"
+                  title="Wishlist"
                 >
-                  Sign In
-                </Link>
+                  <div className="relative">
+                    <Heart className="h-4 w-4 text-foreground" />
+                  </div>
+                </button>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/account"
-                    className="ml-1 relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs"
-                    aria-label="Account Portal"
-                    title="Account Portal"
-                  >
-                    {user?.user_metadata?.avatar_url || user?.user_metadata?.picture ? (
-                      <img
-                        src={user.user_metadata.avatar_url || user.user_metadata.picture}
-                        alt="User Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-4 w-4" />
+                <Link
+                  to="/wishlist"
+                  className="p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                  aria-label="Wishlist"
+                  title="Wishlist"
+                >
+                  <div className="relative">
+                    <Heart className="h-4 w-4 text-foreground" />
+                    {wishlistCount > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+                        {wishlistCount}
+                      </span>
                     )}
-                  </Link>
-                </div>
+                  </div>
+                </Link>
               )}
+
+              <button
+                onClick={() => openCartDrawer(true)}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label="Studio Bag"
+                title="Studio Bag"
+              >
+                <div className="relative">
+                  <ShoppingBag className="h-4 w-4" />
+                  {totalCartCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      {totalCartCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+
+              {(() => {
+                const userAvatar =
+                  user?.user_metadata?.avatar_url !== undefined && user?.user_metadata?.avatar_url !== null
+                    ? user.user_metadata.avatar_url
+                    : (user?.user_metadata?.picture || "");
+
+                return !user ? (
+                  <Link
+                    to="/auth"
+                    className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 hover:bg-muted/40 transition cursor-pointer shadow-xs"
+                    title="Sign In"
+                    aria-label="Sign In"
+                  >
+                    <LogIn className="h-4 w-4 text-accent" />
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSignOutModalOpen(true)}
+                      className="p-1.5 text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                      title="Sign Out"
+                      aria-label="Sign Out"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+
+                    <Link
+                      to="/account"
+                      className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs shrink-0"
+                      title="Account Profile"
+                      aria-label="Account Profile"
+                    >
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="User Profile" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </Link>
+                  </div>
+                );
+              })()}
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -320,12 +414,11 @@ function ShopPage() {
                 </Link>
               ) : (
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     setMobileMenuOpen(false);
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
+                    setSignOutModalOpen(true);
                   }}
-                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-muted-foreground hover:border-foreground/40 hover:text-foreground hover:bg-muted/30"
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-muted-foreground hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
                 >
                   Sign Out
                 </button>
@@ -334,58 +427,71 @@ function ShopPage() {
           )}
         </header>
 
-        {/* Compact & Mobile-Friendly Shop Header */}
-        <section className="bg-surface border-b border-hairline py-6 sm:py-10 lg:py-12">
+        {/* Compact Editorial Shop Header */}
+        <section className="bg-surface/40 border-b border-hairline py-4 sm:py-6">
           <div className="container-editorial">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
-              <div>
-                <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
-                  Studio Catalog
-                </div>
-                <h1 className="mt-1 text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-                  Workspace Essentials
-                </h1>
-                <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-xl">
-                  Explore carefully engineered mechanical keyboards, acoustic monitors, ergonomic
-                  chairs, and solid wood desks.
-                </p>
+            <div className="max-w-2xl text-left">
+              <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.18em] text-accent">
+                Studio Catalog
               </div>
-
-              {/* Compact Natural Language Search Bar */}
-              <div className="relative w-full md:w-80 lg:w-96">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products or try 'keyboard'..."
-                  className="w-full rounded-full border border-hairline bg-background pl-9 pr-9 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition shadow-xs"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+              <h1 className="mt-0.5 text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
+                Workspace Essentials
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Explore carefully engineered mechanical keyboards, acoustic monitors, ergonomic
+                seating, and solid wood desks.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Main Catalog & Filters Section */}
-        <section className="container-editorial py-6 sm:py-12">
-          {/* Category Filter Pills (No Scrollbar — Clean Wrapping Grid/Flex Layout) */}
-          <div className="mb-6 flex flex-wrap gap-1.5 sm:gap-2">
+        {/* Main Catalog & Controls Section */}
+        <section className="container-editorial pt-4 pb-8 sm:pt-5 sm:pb-12">
+          {/* Dedicated Studio Search Input Section (Positioned closer to top) */}
+          <div className="mb-4 sm:mb-5 max-w-2xl mx-auto">
+            <div className="relative flex items-center bg-surface/90 rounded-full border border-hairline/80 p-1 shadow-sm focus-within:border-foreground/60 focus-within:bg-background transition-all duration-200 backdrop-blur-md">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-accent shrink-0 ml-1">
+                <Search className="h-3.5 w-3.5" />
+              </div>
+              <input
+                id="shop-search-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (!e.target.value) {
+                    navigate({ to: "/shop", search: { q: undefined } });
+                  }
+                }}
+                placeholder="Search studio catalog for mechanical keyboards, precision mice, monitors..."
+                className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    navigate({ to: "/shop", search: { q: undefined } });
+                  }}
+                  className="mr-1.5 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface transition cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category Filter Pills (Styled matching Landing Page Featured Essentials) */}
+          <div className="mb-6 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] transition-all border ${
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition cursor-pointer ${
                   selectedCategory === cat
-                    ? "bg-foreground text-background border-foreground shadow-xs"
-                    : "border-hairline bg-surface text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                    ? "bg-foreground text-background"
+                    : "border border-hairline bg-surface text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {cat}
@@ -401,16 +507,16 @@ function ShopPage() {
             >
               <SlidersHorizontal className="h-3.5 w-3.5 text-accent" />
               {filtersExpanded ? "Hide Filters" : "Show Filters & Refine"}
-              {(selectedPersona !== "All" || selectedBadge !== "All" || maxPrice < 7500 || sortBy !== "featured") && (
+              {(selectedPersona !== "All" || selectedBadge !== "All" || maxPrice < 7500 || sortBy !== "featured" || searchQuery) && (
                 <span className="ml-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                  {(selectedPersona !== "All" ? 1 : 0) + (selectedBadge !== "All" ? 1 : 0) + (maxPrice < 7500 ? 1 : 0) + (sortBy !== "featured" ? 1 : 0)}
+                  {(selectedPersona !== "All" ? 1 : 0) + (selectedBadge !== "All" ? 1 : 0) + (maxPrice < 7500 ? 1 : 0) + (sortBy !== "featured" ? 1 : 0) + (searchQuery ? 1 : 0)}
                 </span>
               )}
             </button>
           </div>
 
-          {/* Filters & Sorting Toolbar (Responsive Stack on Mobile) */}
-          <div className={`mb-6 ${filtersExpanded ? "flex" : "hidden sm:flex"} flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 rounded-2xl sm:rounded-3xl border border-hairline bg-surface/60 p-3.5 sm:p-6 backdrop-blur-xs`}>
+          {/* Filters & Sorting Toolbar */}
+          <div className={`mb-6 ${filtersExpanded ? "flex" : "hidden sm:flex"} flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-6 rounded-2xl sm:rounded-3xl border border-hairline bg-surface/60 p-3.5 sm:p-5 backdrop-blur-xs`}>
             <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3 text-xs font-medium text-muted-foreground w-full sm:w-auto">
               <span className="flex items-center gap-2 text-foreground font-bold uppercase tracking-wider text-[11px] sm:text-xs">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-accent" /> Refine:
@@ -496,34 +602,45 @@ function ShopPage() {
                   setSelectedBadge("All");
                   setSearchQuery("");
                   setMaxPrice(7500);
+                  navigate({ to: "/shop", search: { q: undefined } });
                 }}
-                className="font-semibold text-accent hover:underline text-[11px] sm:text-xs"
+                className="font-semibold text-accent hover:underline text-[11px] sm:text-xs cursor-pointer"
               >
                 Reset Filters
               </button>
             )}
           </div>
 
-          {/* Product Cards Grid (Optimized 2-column on Mobile view, 3-col on tablet, 4-col on desktop) */}
+          {/* Product Cards Grid & Empty Search State */}
           {filteredProducts.length === 0 ? (
-            <div className="my-12 rounded-[2rem] border border-hairline bg-surface p-8 sm:p-12 text-center shadow-sm">
-              <h3 className="text-lg font-bold text-foreground">No matching products found</h3>
-              <p className="mt-2 text-xs text-muted-foreground max-w-md mx-auto">
-                Try adjusting your search criteria or resetting filters to explore our complete
-                studio catalog.
+            <div className="my-10 rounded-[2.5rem] border border-hairline bg-gradient-to-b from-surface via-background to-surface/80 p-8 sm:p-14 text-center shadow-lg">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent mb-4">
+                <Search className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                No workspace gear matching "{searchQuery || "your query"}"
+              </h3>
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                We couldn't find any products matching your search criteria. Try checking spelling or resetting filters.
               </p>
-              <Button
-                onClick={() => {
-                  setSelectedCategory("All");
-                  setSelectedPersona("All");
-                  setSelectedBadge("All");
-                  setSearchQuery("");
-                  setMaxPrice(7500);
-                }}
-                className="mt-6 rounded-full px-6 py-2.5 text-xs font-bold"
-              >
-                View Full Catalog
-              </Button>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("All");
+                    setSelectedPersona("All");
+                    setSelectedBadge("All");
+                    setSearchQuery("");
+                    setMaxPrice(7500);
+                    navigate({ to: "/shop", search: { q: undefined } });
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-xs font-semibold text-background hover:bg-foreground/90 transition shadow-md cursor-pointer"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reset All Filters & View Full Catalog
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -734,6 +851,7 @@ function ShopPage() {
       {/* Shared Global Footer */}
       <Footer />
       <SignUpNoticeModal isOpen={signUpNoticeOpen} onClose={() => setSignUpNoticeOpen(false)} />
+      <SignOutConfirmModal isOpen={signOutModalOpen} onClose={() => setSignOutModalOpen(false)} />
       <AIShoppingAssistant
         onAddToCart={handleAddToCart}
         onShowSignUpNotice={() => setSignUpNoticeOpen(true)}

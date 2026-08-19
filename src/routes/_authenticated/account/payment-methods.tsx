@@ -39,23 +39,49 @@ function PaymentMethodsPage() {
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   // Fetch payment methods from API
+  // Fetch payment methods from API & localStorage
   useEffect(() => {
+    try {
+      const localSaved = localStorage.getItem("northlane_saved_payment_methods");
+      if (localSaved) {
+        const parsed = JSON.parse(localSaved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPayments(parsed);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {}
+
     fetch("http://localhost:3000/api/payment/methods")
       .then((res) => res.json())
       .then((data) => {
         if (data.methods) {
           setPayments(data.methods);
+          try {
+            localStorage.setItem("northlane_saved_payment_methods", JSON.stringify(data.methods));
+          } catch {}
         }
       })
       .catch(() => {
-        // Local fallback
-        setPayments([
+        const defaultMethods = [
           { id: "pm-1", brand: "Visa", last4: "4242", expMonth: 11, expYear: 2028, isDefault: true },
           { id: "pm-2", brand: "Mastercard", last4: "8899", expMonth: 8, expYear: 2027, isDefault: false },
-        ]);
+        ];
+        setPayments(defaultMethods);
+        try {
+          localStorage.setItem("northlane_saved_payment_methods", JSON.stringify(defaultMethods));
+        } catch {}
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const savePaymentsToLocal = (updated: PaymentMethod[]) => {
+    setPayments(updated);
+    try {
+      localStorage.setItem("northlane_saved_payment_methods", JSON.stringify(updated));
+    } catch {}
+  };
 
   const handleAddStripeCard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,10 +96,19 @@ function PaymentMethodsPage() {
     const [mStr, yStr] = cardExp.split("/");
     const expMonth = parseInt(mStr, 10) || 12;
     const expYear = parseInt(yStr, 10) || 2028;
-    const brand = rawDigits.startsWith("4") ? "Visa" : "Mastercard";
+    const brand = rawDigits.startsWith("4") ? "Visa" : rawDigits.startsWith("5") ? "Mastercard" : rawDigits.startsWith("3") ? "Amex" : "Visa";
+
+    const newCard: PaymentMethod = {
+      id: `pm-${Date.now()}`,
+      brand,
+      last4,
+      expMonth,
+      expYear,
+      isDefault: isDefaultCard,
+    };
 
     try {
-      const res = await fetch("http://localhost:3000/api/payment/methods", {
+      await fetch("http://localhost:3000/api/payment/methods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -84,38 +119,23 @@ function PaymentMethodsPage() {
           isDefault: isDefaultCard,
         }),
       });
-
-      const data = await res.json();
-      if (data.method) {
-        if (isDefaultCard) {
-          setPayments((prev) => [...prev.map((c) => ({ ...c, isDefault: false })), data.method]);
-        } else {
-          setPayments((prev) => [...prev, data.method]);
-        }
-      } else {
-        throw new Error("Failed to save method");
-      }
-      toast.success(`Stripe ${brand} ending in •••• ${last4} added!`);
-    } catch {
-      // Local state fallback
-      const newCard: PaymentMethod = {
-        id: `pm-${Date.now()}`,
-        brand,
-        last4,
-        expMonth,
-        expYear,
-        isDefault: isDefaultCard,
-      };
-      setPayments((prev) => (isDefaultCard ? [...prev.map((c) => ({ ...c, isDefault: false })), newCard] : [...prev, newCard]));
-      toast.success(`Stripe ${brand} ending in •••• ${last4} added to wallet!`);
-    } finally {
-      setIsAddingCard(false);
-      setShowPaymentModal(false);
-      setCardNumber("");
-      setCardExp("");
-      setCardCvc("");
-      setCardZip("");
+    } catch (e) {
+      console.warn("API fallback", e);
     }
+
+    const updated = isDefaultCard
+      ? [...payments.map((c) => ({ ...c, isDefault: false })), newCard]
+      : [...payments, newCard];
+
+    savePaymentsToLocal(updated);
+    toast.success(`Stripe ${brand} ending in •••• ${last4} added to wallet!`);
+
+    setIsAddingCard(false);
+    setShowPaymentModal(false);
+    setCardNumber("");
+    setCardExp("");
+    setCardCvc("");
+    setCardZip("");
   };
 
   const handleSetDefault = async (id: string) => {
@@ -124,7 +144,8 @@ function PaymentMethodsPage() {
     } catch (e) {
       console.warn("API fallback", e);
     }
-    setPayments((prev) => prev.map((pm) => ({ ...pm, isDefault: pm.id === id })));
+    const updated = payments.map((pm) => ({ ...pm, isDefault: pm.id === id }));
+    savePaymentsToLocal(updated);
     toast.success("Default payment method updated.");
   };
 
@@ -138,13 +159,11 @@ function PaymentMethodsPage() {
       console.warn("API fallback", e);
     }
 
-    setPayments((prev) => {
-      const remaining = prev.filter((p) => p.id !== targetId);
-      if (showDeleteModal.isDefault && remaining.length > 0) {
-        remaining[0].isDefault = true;
-      }
-      return remaining;
-    });
+    const remaining = payments.filter((p) => p.id !== targetId);
+    if (showDeleteModal.isDefault && remaining.length > 0) {
+      remaining[0].isDefault = true;
+    }
+    savePaymentsToLocal(remaining);
 
     setShowDeleteModal(null);
     toast.info("Payment method removed from wallet.");

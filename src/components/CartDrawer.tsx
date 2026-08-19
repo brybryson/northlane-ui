@@ -151,26 +151,22 @@ export const CartDrawer: React.FC = () => {
         {/* Cart Items Scroll Area */}
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
-            <div className="h-20 w-20 rounded-full bg-surface border border-hairline flex items-center justify-center text-muted-foreground">
-              <ShoppingBag className="h-8 w-8 opacity-30" />
-            </div>
+            <ShoppingBag className="h-10 w-10 text-muted-foreground/30 mb-1" />
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-foreground">Your studio bag is empty</h3>
-              <p className="text-xs text-muted-foreground max-w-[240px]">
+              <h3 className="text-base font-bold text-foreground tracking-tight">Your studio bag is empty</h3>
+              <p className="text-xs text-muted-foreground max-w-[240px] leading-relaxed">
                 Explore our catalog to add studio-grade items to your setup.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={() => {
                 setIsOpen(false);
                 navigate({ to: "/shop" });
               }}
-              className="mt-2 text-xs rounded-full px-5 py-2 font-semibold"
+              className="mt-2 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-xs font-semibold shadow-xs transition-all duration-300 hover:bg-foreground/90 active:scale-[0.98] cursor-pointer"
             >
-              Browse Shop Catalog
-            </Button>
+              <span>Explore Shop Catalog</span>
+            </button>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-6">

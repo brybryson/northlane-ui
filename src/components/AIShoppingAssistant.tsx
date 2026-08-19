@@ -42,7 +42,7 @@ const WELCOME_MESSAGE: Message = {
   role: "assistant",
   content:
     "Welcome to Northlane Studio! I'm your AI Shopping Concierge. I can help you find products, compare specifications, compile workspace setups, or answer store policy questions. What are you looking to craft today?",
-  timestamp: new Date().toISOString(),
+  timestamp: "2026-01-01T00:00:00.000Z",
 };
 
 const SUGGESTIONS = [
@@ -57,18 +57,22 @@ const SUGGESTIONS = [
 /* -------------------------------------------------------------------------- */
 
 function useChatHistory() {
-  const [messages, setMessages] = useState<Message[]>(() => {
+  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+
+  // Load persisted history on mount to prevent SSR hydration mismatch
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed: Message[] = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
       }
     } catch {
-      // corrupted storage — fall through to default
+      // corrupted storage — fallback to default
     }
-    return [WELCOME_MESSAGE];
-  });
+  }, []);
 
   // Sync to localStorage whenever messages change
   useEffect(() => {

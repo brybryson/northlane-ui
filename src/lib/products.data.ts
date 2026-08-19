@@ -30,6 +30,8 @@ export interface ProductReview {
   title: string;
   comment: string;
   verified: boolean;
+  mediaUrl?: string;
+  mediaCaption?: string;
 }
 
 export interface CatalogProduct {
@@ -136,7 +138,30 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
       Connectivity: "Wireless 2.4Ghz & Type-C",
       Warranty: "2-Year Warranty",
     },
-    reviews: [],
+    reviews: [
+      {
+        id: "kb-02-r1",
+        author: "Ethan Caldwell",
+        avatar: "",
+        rating: 5,
+        date: "July 29, 2026",
+        title: "Best keyboard I've ever owned, period.",
+        comment: "I've tried dozens of keyboards over the years — from budget clunkers to high-end customs. The Northlane Flow 75 Pro is on another level. The low-profile linears are buttery smooth with zero wobble, and the aluminum chassis gives it a tank-like solidity. Typing on this thing feels like a performance, not just input. Highly recommend to anyone serious about their setup.",
+        verified: true,
+      },
+      {
+        id: "kb-02-r2",
+        author: "Sofia Reyes",
+        avatar: "",
+        rating: 4,
+        date: "August 1, 2026",
+        title: "RGB glow is subtle but stunning — worth every cent.",
+        comment: "The per-key RGB on this keyboard is genuinely beautiful. It doesn't scream gamer — it's tasteful and elegant. I keep it on a cool white wave effect and it transforms my whole desk vibe at night. The wireless connectivity is flawless across all 3 devices. Only reason I'm giving 4 stars instead of 5 is I wish the keycaps were PBT from the factory, but honestly that's a minor gripe.",
+        verified: true,
+        mediaUrl: "https://images.unsplash.com/photo-1541140532154-b024d705b90a?auto=format&fit=crop&w=800&q=80",
+        mediaCaption: "Flow 75 Pro — late night RGB setup with cool white wave effect",
+      },
+    ],
   },
   {
     id: "kb-03",
@@ -178,8 +203,8 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
     brand: "Northlane Studio",
     price: 2950,
     originalPrice: 3450,
-    rating: 4.9,
-    reviewsCount: 156,
+    rating: 4.5,
+    reviewsCount: 2,
     img: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
@@ -197,14 +222,41 @@ export const CATALOG_PRODUCTS: CatalogProduct[] = [
       badge: "Best Seller",
     },
     specs: {
-      Sensor: "Darkfield 8000 DPI Optical",
-      Clicks: "Silent Tactile Microswitches",
+      Sensor: "Darkfield 8,000 DPI Optical",
+      Switches: "Silent Tactile Microswitches",
+      Connectivity: "2.4GHz Wireless & Bluetooth 5.2",
+      "Battery Life": "Up to 70 Days (USB-C Rechargeable)",
+      Weight: "99g Lightweight Ergonomic Body",
       Warranty: "2-Year Studio Warranty",
     },
-    reviews: [],
+    reviews: [
+      {
+        id: "m-01-r1",
+        author: "Marcus Tan",
+        avatar: "",
+        rating: 5,
+        date: "August 2, 2026",
+        title: "Feels like it was made for my hand.",
+        comment: "I've been using this mouse daily for three weeks now and it's genuinely the most comfortable mouse I've ever owned. The matte graphite finish is gorgeous and the silent scroll wheel is a game changer in meetings. DPI sensor is insanely precise — zero lag on a 4K monitor. Absolutely worth every peso.",
+        verified: true,
+        mediaUrl: "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=800&q=80",
+        mediaCaption: "Nordic Precision Mouse on my clean oak desk setup — blends in perfectly.",
+      },
+      {
+        id: "m-01-r2",
+        author: "Camille Santos",
+        avatar: "",
+        rating: 4,
+        date: "August 3, 2026",
+        title: "Quiet, precise, and surprisingly light.",
+        comment: "Switched from a basic office mouse and the difference is night and day. The silent clicks are fantastic for open-plan offices. Build quality feels premium with no flex or creaking. The only thing keeping this from 5 stars is that I wish it came with a Type-C dongle instead of micro-USB. Otherwise, highly recommended for anyone upgrading their desk setup.",
+        verified: true,
+      },
+    ],
   },
   {
     id: "m-02",
+
     name: "Northlane Vertical Ergo Mouse",
     subtitle: "57-Degree Natural Grip Angle",
     category: "Mouse",

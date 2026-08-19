@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { User, KeyRound, AlertCircle, ArrowLeft, Camera } from "lucide-react";
+import { User, KeyRound, AlertCircle, ArrowLeft, Camera, Trash2, Check, X, ShieldCheck, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SavedAddressesSection } from "@/components/account/SavedAddressesSection";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/account/profile")({
   head: () => ({
@@ -27,23 +28,31 @@ function ProfilePage() {
   const [isSendingReset, setIsSendingReset] = useState(false);
 
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string>("");
+  const [showUploadConfirmModal, setShowUploadConfirmModal] = useState(false);
+  const [showRemoveConfirmModal, setShowRemoveConfirmModal] = useState(false);
+  const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setAuthUser(data.user);
-        const gPhoto = data.user.user_metadata?.picture || data.user.user_metadata?.avatar_url || "";
-        const customAvatar = data.user.user_metadata?.avatar_url || gPhoto;
+        const meta = data.user.user_metadata || {};
+        // If avatar_url is explicitly set (including empty string), respect it over picture
+        const customAvatar =
+          meta.avatar_url !== undefined && meta.avatar_url !== null
+            ? meta.avatar_url
+            : (meta.picture || "");
         setAvatarUrl(customAvatar);
         if (data.user.email) {
           const emailName = data.user.email.split("@")[0];
-          setFullName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+          setFullName(meta.full_name || emailName.charAt(0).toUpperCase() + emailName.slice(1));
         }
       }
     });
   }, []);
 
-  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -53,29 +62,61 @@ function ProfilePage() {
     }
 
     const reader = new FileReader();
-    reader.onloadend = async () => {
+    reader.onloadend = () => {
       const base64Url = reader.result as string;
-      setAvatarUrl(base64Url);
-      const { error } = await supabase.auth.updateUser({
-        data: { avatar_url: base64Url },
-      });
-      if (error) {
-        toast.error("Failed to update profile photo.");
-      } else {
-        toast.success("Profile photo updated successfully!");
-        window.location.reload();
-      }
+      setPendingPhotoUrl(base64Url);
+      setShowUploadConfirmModal(true);
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
-  const handleRemovePhoto = async () => {
-    setAvatarUrl("");
-    await supabase.auth.updateUser({
-      data: { avatar_url: "" },
-    });
-    toast.success("Profile photo removed.");
-    window.location.reload();
+  const handleConfirmPhotoUpload = async () => {
+    if (!pendingPhotoUrl) return;
+    setIsUpdatingPhoto(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_url: pendingPhotoUrl, picture: null },
+      });
+      if (error) throw error;
+
+      setAvatarUrl(pendingPhotoUrl);
+      setAuthUser((prev: any) => ({
+        ...prev,
+        user_metadata: { ...(prev?.user_metadata || {}), avatar_url: pendingPhotoUrl, picture: null },
+      }));
+      window.dispatchEvent(new CustomEvent("northlane_user_profile_updated"));
+      toast.success("Profile photo updated successfully!");
+      setShowUploadConfirmModal(false);
+      setPendingPhotoUrl("");
+    } catch (err) {
+      toast.error("Failed to update profile photo.");
+    } finally {
+      setIsUpdatingPhoto(false);
+    }
+  };
+
+  const handleConfirmPhotoRemove = async () => {
+    setIsUpdatingPhoto(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_url: "", picture: null },
+      });
+      if (error) throw error;
+
+      setAvatarUrl("");
+      setAuthUser((prev: any) => ({
+        ...prev,
+        user_metadata: { ...(prev?.user_metadata || {}), avatar_url: "", picture: null },
+      }));
+      window.dispatchEvent(new CustomEvent("northlane_user_profile_updated"));
+      toast.success("Profile photo removed.");
+      setShowRemoveConfirmModal(false);
+    } catch (err) {
+      toast.error("Failed to remove profile photo.");
+    } finally {
+      setIsUpdatingPhoto(false);
+    }
   };
 
   const handleOpenConfirmModal = (e: React.FormEvent) => {
@@ -165,7 +206,7 @@ function ProfilePage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleAvatarFileUpload}
+                  onChange={handleAvatarFileSelect}
                   className="hidden"
                 />
               </label>
@@ -184,14 +225,14 @@ function ProfilePage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleAvatarFileUpload}
+                onChange={handleAvatarFileSelect}
                 className="hidden"
               />
             </label>
             {avatarUrl && (
               <button
                 type="button"
-                onClick={handleRemovePhoto}
+                onClick={() => setShowRemoveConfirmModal(true)}
                 className="px-4 py-2 rounded-full bg-surface hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/30 text-muted-foreground text-xs font-semibold border border-hairline transition-colors cursor-pointer"
               >
                 Remove Photo
@@ -290,41 +331,164 @@ function ProfilePage() {
 
       <SavedAddressesSection />
 
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md p-6 sm:p-8 rounded-2xl bg-background border border-hairline shadow-2xl space-y-4 text-left"
-          >
-            <div className="flex items-center gap-3 border-b border-hairline pb-3">
-              <AlertCircle className="w-5 h-5 text-accent" />
-              <h3 className="text-base font-bold text-foreground">Confirm Profile Update</h3>
+      {/* Profile Changes Confirmation Modal */}
+      <Dialog open={showConfirmModal} onOpenChange={(open) => !open && setShowConfirmModal(false)}>
+        <DialogContent className="sm:max-w-[420px] rounded-3xl p-6 border-hairline bg-background shadow-2xl overflow-hidden z-[100]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-accent via-indigo-500 to-accent" />
+          
+          <DialogHeader className="text-center sm:text-center mt-2 flex flex-col items-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 mb-4 text-accent">
+              <ShieldCheck className="h-6 w-6" />
             </div>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-foreground text-center">
+              Confirm Profile Update
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-2 leading-relaxed text-center">
+              Save account credentials and preference changes for <strong className="text-foreground">{fullName}</strong>?
+            </DialogDescription>
+          </DialogHeader>
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Are you sure you want to save these profile changes for <strong className="text-foreground">{fullName}</strong>?
-            </p>
-
-            <div className="pt-3 flex items-center justify-end gap-3 border-t border-hairline">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 rounded-full border border-hairline text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleExecuteSaveProfile}
-                className="px-5 py-2 rounded-full bg-foreground text-background text-xs font-bold shadow-xs cursor-pointer"
-              >
-                Confirm & Save
-              </button>
+          <div className="my-6 flex flex-col gap-3">
+            <div className="group flex items-center gap-4 rounded-2xl bg-surface/40 p-3.5 transition-all border border-hairline/30">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background border border-hairline/30 text-muted-foreground shadow-sm">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col text-left">
+                <h4 className="text-xs font-semibold text-foreground tracking-wide">Studio Account Credentials</h4>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 pr-2">
+                  Updates phone number ({countryCode} {phone}) and currency preferences ({currency}).
+                </p>
+              </div>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0 w-full">
+            <button
+              type="button"
+              onClick={handleExecuteSaveProfile}
+              disabled={isSavingProfile}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-sm font-semibold text-background hover:bg-foreground/90 transition-all duration-300 cursor-pointer disabled:opacity-50"
+            >
+              {isSavingProfile ? "Saving..." : "Confirm & Save Changes"} <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowConfirmModal(false)}
+              disabled={isSavingProfile}
+              className="w-full inline-flex items-center justify-center rounded-full border border-hairline bg-surface/50 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Upload Confirmation Modal */}
+      <Dialog open={showUploadConfirmModal} onOpenChange={(open) => !open && setShowUploadConfirmModal(false)}>
+        <DialogContent className="sm:max-w-[420px] rounded-3xl p-6 border-hairline bg-background shadow-2xl overflow-hidden z-[100]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-accent via-indigo-500 to-accent" />
+          
+          <DialogHeader className="text-center sm:text-center mt-2 flex flex-col items-center">
+            <div className="mx-auto h-20 w-20 rounded-full overflow-hidden border-2 border-accent shadow-md mb-4 shrink-0">
+              <img src={pendingPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+            </div>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-foreground text-center">
+              Confirm Profile Photo
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-2 leading-relaxed text-center">
+              Would you like to set this image as your official studio profile picture?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-6 flex flex-col gap-3">
+            <div className="group flex items-center gap-4 rounded-2xl bg-surface/40 p-3.5 transition-all border border-hairline/30">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background border border-hairline/30 text-accent shadow-sm">
+                <Camera className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col text-left">
+                <h4 className="text-xs font-semibold text-foreground tracking-wide">In-Place Profile Update</h4>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 pr-2">
+                  Replaces existing avatar data directly on your studio user profile without duplicate records.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0 w-full">
+            <button
+              type="button"
+              onClick={handleConfirmPhotoUpload}
+              disabled={isUpdatingPhoto}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-sm font-semibold text-background hover:bg-foreground/90 transition-all duration-300 cursor-pointer disabled:opacity-50"
+            >
+              {isUpdatingPhoto ? "Uploading..." : "Confirm & Save Photo"} <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowUploadConfirmModal(false);
+                setPendingPhotoUrl("");
+              }}
+              disabled={isUpdatingPhoto}
+              className="w-full inline-flex items-center justify-center rounded-full border border-hairline bg-surface/50 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Remove Confirmation Modal */}
+      <Dialog open={showRemoveConfirmModal} onOpenChange={(open) => !open && setShowRemoveConfirmModal(false)}>
+        <DialogContent className="sm:max-w-[420px] rounded-3xl p-6 border-hairline bg-background shadow-2xl overflow-hidden z-[100]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-accent via-indigo-500 to-accent" />
+          
+          <DialogHeader className="text-center sm:text-center mt-2 flex flex-col items-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 mb-4 text-accent">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-foreground text-center">
+              Remove Profile Photo
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-2 leading-relaxed text-center">
+              Are you sure you want to remove your custom profile photo? This will delete your custom avatar image.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-6 flex flex-col gap-3">
+            <div className="group flex items-center gap-4 rounded-2xl bg-surface/40 p-3.5 transition-all border border-hairline/30">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background border border-hairline/30 text-muted-foreground shadow-sm">
+                <User className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col text-left">
+                <h4 className="text-xs font-semibold text-foreground tracking-wide">Default Account Initials</h4>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 pr-2">
+                  Your profile avatar will revert to your account initials ({fullName ? fullName.charAt(0).toUpperCase() : "U"}).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col sm:space-x-0 w-full">
+            <button
+              type="button"
+              onClick={handleConfirmPhotoRemove}
+              disabled={isUpdatingPhoto}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-4 py-3 text-sm font-semibold text-background hover:bg-foreground/90 transition-all duration-300 cursor-pointer disabled:opacity-50"
+            >
+              {isUpdatingPhoto ? "Removing..." : "Confirm & Remove Photo"} <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowRemoveConfirmModal(false)}
+              disabled={isUpdatingPhoto}
+              className="w-full inline-flex items-center justify-center rounded-full border border-hairline bg-surface/50 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all cursor-pointer disabled:opacity-50"
+            >
+              Keep Photo
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

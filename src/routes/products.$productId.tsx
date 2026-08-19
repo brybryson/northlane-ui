@@ -18,6 +18,11 @@ import {
   Heart,
   Sliders,
   X,
+  Search,
+  User,
+  LogOut,
+  LogIn,
+  Menu,
 } from "lucide-react";
 import { CATALOG_PRODUCTS, CatalogProduct } from "../lib/products.data";
 import { Button } from "../components/ui/button";
@@ -26,6 +31,7 @@ import { toast } from "sonner";
 import { useAuthUser } from "@/hooks/use-auth-user";
 import { supabase } from "@/integrations/supabase/client";
 import { SignUpNoticeModal } from "@/components/SignUpNoticeModal";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 import { AIShoppingAssistant } from "@/components/AIShoppingAssistant";
 
 import { useCart } from "@/context/cart-context";
@@ -89,6 +95,8 @@ function ProductDetailsPage() {
   const { user } = useAuthUser();
   const { addToCart, setIsOpen: openCartDrawer, itemCount } = useCart();
   const [signUpNoticeOpen, setSignUpNoticeOpen] = useState(false);
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { productId } = Route.useParams();
   const navigate = useNavigate();
 
@@ -97,6 +105,7 @@ function ProductDetailsPage() {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"specs" | "reviews" | "bundle">("specs");
+  const [reviewsPage, setReviewsPage] = useState(1);
 
   const [wishlistIds, setWishlistIds] = useState<string[]>(() => {
     try {
@@ -131,6 +140,10 @@ function ProductDetailsPage() {
       }
     }
     syncWishlist();
+    window.addEventListener("northlane_wishlist_updated", syncWishlist);
+    return () => {
+      window.removeEventListener("northlane_wishlist_updated", syncWishlist);
+    };
   }, [user]);
 
   const toggleWishlist = async () => {
@@ -231,68 +244,217 @@ function ProductDetailsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-accent/20">
       <div>
-        {/* Navigation Header */}
-        <header className="sticky top-0 z-40 border-b border-hairline bg-background/90 backdrop-blur-xl">
+        {/* Navigation Header — matching /shop */}
+        <header className="sticky top-0 z-40 border-b border-hairline bg-background/90 backdrop-blur-xl transition-all duration-300">
           <div className="container-editorial flex items-center justify-between py-3.5 sm:py-4">
             <Link
               to="/"
-              className="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground"
+              className="group flex items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-90"
             >
               <img src="/northlane-logo.png" alt="Northlane" className="h-8 w-8 rounded-md object-cover" />
               <span>Northlane</span>
             </Link>
 
-            <div className="flex items-center gap-2.5">
+            <nav className="hidden justify-center gap-8 lg:flex">
+              <Link to="/shop" className="text-sm font-semibold text-foreground">
+                Shop
+              </Link>
+              <a
+                href="/#collections"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Collections
+              </a>
+              <a
+                href="/#concierge"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Concierge
+              </a>
+              <a
+                href="/#workspaces"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Workspaces
+              </a>
+              <a
+                href="/#journal"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Journal
+              </a>
+            </nav>
+
+            <div className="flex items-center justify-end gap-2">
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground mr-1"
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label="Search Catalog"
+                title="Search Catalog"
               >
-                <ArrowLeft className="h-3.5 w-3.5" /> Back to Shop
+                <Search className="h-4 w-4" />
               </Link>
 
-              <Link
-                to="/wishlist"
-                className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/30 transition cursor-pointer"
-                aria-label="Wishlist"
+              {!user ? (
+                <button
+                  type="button"
+                  onClick={() => setSignUpNoticeOpen(true)}
+                  className="p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                  aria-label="Wishlist"
+                  title="Wishlist"
+                >
+                  <div className="relative">
+                    <Heart className="h-4 w-4 text-foreground" />
+                  </div>
+                </button>
+              ) : (
+                <Link
+                  to="/wishlist"
+                  className="p-2 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                  aria-label="Wishlist"
+                  title="Wishlist"
+                >
+                  <div className="relative">
+                    <Heart className="h-4 w-4 text-foreground" />
+                    {wishlistCount > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              )}
+
+              <button
+                onClick={() => {
+                  if (!user) {
+                    setSignUpNoticeOpen(true);
+                  } else {
+                    openCartDrawer(true);
+                  }
+                }}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                aria-label="Studio Bag"
+                title="Studio Bag"
               >
                 <div className="relative">
-                  <Heart className="h-4 w-4 text-muted-foreground hover:text-accent transition-colors" />
-                  {wishlistCount > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
-                      {wishlistCount}
+                  <ShoppingBag className="h-4 w-4" />
+                  {user && itemCount > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
+                      {itemCount}
                     </span>
                   )}
                 </div>
-              </Link>
+              </button>
+
+              {(() => {
+                const userAvatar =
+                  user?.user_metadata?.avatar_url !== undefined && user?.user_metadata?.avatar_url !== null
+                    ? user.user_metadata.avatar_url
+                    : (user?.user_metadata?.picture || "");
+
+                return !user ? (
+                  <Link
+                    to="/auth"
+                    className="relative flex items-center justify-center h-8 w-8 rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 hover:bg-muted/40 transition cursor-pointer shadow-xs"
+                    title="Sign In"
+                    aria-label="Sign In"
+                  >
+                    <LogIn className="h-4 w-4 text-accent" />
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSignOutModalOpen(true)}
+                      className="p-1.5 text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                      title="Sign Out"
+                      aria-label="Sign Out"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+
+                    <Link
+                      to="/account"
+                      className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden shadow-xs shrink-0"
+                      title="Account Profile"
+                      aria-label="Account Profile"
+                    >
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="User Profile" className="h-full w-full object-cover" />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
+                    </Link>
+                  </div>
+                );
+              })()}
 
               <button
-                onClick={() => openCartDrawer(true)}
-                className="relative flex items-center gap-2 rounded-full border border-hairline bg-surface px-3.5 py-1.5 text-xs font-semibold text-foreground hover:border-foreground/30 cursor-pointer"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-1.5 lg:hidden text-foreground hover:text-accent cursor-pointer"
+                aria-label="Menu"
               >
-                <ShoppingBag className="h-4 w-4" />
-                <span>Bag ({itemCount})</span>
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
+            </div>
+          </div>
+
+          {/* Mobile Drawer Navigation */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden border-t border-hairline bg-background p-4 flex flex-col gap-3 text-sm font-semibold">
+              <Link to="/shop" onClick={() => setMobileMenuOpen(false)} className="text-accent">
+                Shop Catalog
+              </Link>
+              <a
+                href="/#collections"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-muted-foreground"
+              >
+                Collections
+              </a>
+              <a
+                href="/#concierge"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-muted-foreground"
+              >
+                Concierge
+              </a>
+              <a
+                href="/#workspaces"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-muted-foreground"
+              >
+                Workspaces
+              </a>
+              <a
+                href="/#journal"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-muted-foreground"
+              >
+                Journal
+              </a>
 
               {!user ? (
                 <Link
                   to="/auth"
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-foreground/40 hover:bg-muted/30 cursor-pointer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-foreground hover:border-foreground/40 hover:bg-muted/30"
                 >
-                  Sign In
+                  Sign In / Create Account
                 </Link>
               ) : (
                 <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    toast.success("Signed out successfully");
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setSignOutModalOpen(true);
                   }}
-                  className="ml-1 inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
+                  className="flex items-center justify-center gap-2 rounded-full border border-border bg-surface py-3 text-sm font-semibold text-muted-foreground hover:border-foreground/40 hover:text-foreground hover:bg-muted/30 cursor-pointer"
                 >
                   Sign Out
                 </button>
               )}
             </div>
-          </div>
+          )}
         </header>
 
         {/* Breadcrumbs */}
@@ -513,170 +675,342 @@ function ProductDetailsPage() {
         {/* Technical Specifications & Reviews Tabs */}
         <section className="bg-surface border-t border-b border-hairline py-12 sm:py-16">
           <div className="container-editorial">
-            {/* Clean Tab Switcher Header */}
-            <div className="flex border-b border-hairline mb-8 gap-4 sm:gap-8 overflow-x-auto no-scrollbar">
-              <button
-                onClick={() => setActiveTab("specs")}
-                className={`pb-3 text-xs sm:text-sm font-bold tracking-tight transition shrink-0 border-b-2 ${
-                  activeTab === "specs"
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Technical Specifications
-              </button>
-              <button
-                onClick={() => setActiveTab("bundle")}
-                className={`pb-3 text-xs sm:text-sm font-bold tracking-tight transition shrink-0 border-b-2 ${
-                  activeTab === "bundle"
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Frequently Bought Together
-              </button>
-              <button
-                onClick={() => setActiveTab("reviews")}
-                className={`pb-3 text-xs sm:text-sm font-bold tracking-tight transition shrink-0 border-b-2 ${
-                  activeTab === "reviews"
-                    ? "border-foreground text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Verified Reviews ({product.reviews.length || product.reviewsCount})
-              </button>
+            {/* Premium Tab Switcher */}
+            <div className="flex border-b border-hairline mb-10 gap-0 overflow-x-auto no-scrollbar">
+              {(["specs", "bundle", "reviews"] as const).map((tab) => {
+                const labels: Record<string, string> = {
+                  specs: "Technical Specifications",
+                  bundle: "Frequently Bought Together",
+                  reviews: `Verified Reviews (${product.reviews.length || product.reviewsCount})`,
+                };
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`pb-3 px-1 mr-6 sm:mr-8 text-xs sm:text-sm font-bold tracking-tight transition-all shrink-0 border-b-2 ${
+                      activeTab === tab
+                        ? "border-foreground text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {labels[tab]}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Tab 1: Specs */}
+            {/* ── Tab 1: Technical Specifications ── */}
             {activeTab === "specs" && (
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl">
-                {Object.entries(product.specs).map(([key, val]) => (
-                  <div
-                    key={key}
-                    className="rounded-2xl border border-hairline bg-background p-4 sm:p-5 hover:border-foreground/30 transition-all shadow-xs"
-                  >
-                    <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-                      {key}
-                    </div>
-                    <div className="mt-1 text-sm font-bold text-foreground">{val}</div>
+              <div className="w-full space-y-6">
+                <div className="rounded-2xl border border-hairline bg-background p-6 sm:p-8 shadow-xs">
+                  <div className="text-[10px] uppercase tracking-[0.18em] font-bold text-accent mb-1">
+                    Performance & Hardware
                   </div>
-                ))}
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-6">
+                    Technical Specifications
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-10">
+                    {Object.entries(product.specs).map(([key, val]) => (
+                      <div
+                        key={key}
+                        className="flex items-center justify-between py-3 border-b border-hairline/60 text-xs sm:text-sm"
+                      >
+                        <span className="font-semibold text-muted-foreground">{key}</span>
+                        <span className="font-bold text-foreground text-right ml-4">{val as string}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Tab 2: Frequently Bought Together Bundle */}
+            {/* ── Tab 2: Frequently Bought Together ── */}
             {activeTab === "bundle" && (
-              <div className="max-w-4xl rounded-3xl border border-hairline bg-background p-5 sm:p-8">
-                <div className="text-sm sm:text-base font-bold text-foreground mb-4">
-                  Complete Your Setup Bundle (Save 10%)
-                </div>
-
-                <div className="space-y-3 sm:space-y-4">
-                  {/* Main Product */}
-                  <div className="flex items-center gap-4 rounded-2xl border border-hairline bg-surface p-3.5 sm:p-4">
-                    <input type="checkbox" checked disabled className="h-4 w-4 accent-accent" />
-                    <img
-                      src={product.img}
-                      alt={product.name}
-                      className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-foreground">
-                        {product.name} (This Item)
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        ${product.price.toLocaleString()}
-                      </div>
+              <div className="w-full">
+                <div className="rounded-3xl border border-hairline bg-background p-5 sm:p-6 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-4">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.14em] font-bold text-accent">Bundle & Save</div>
+                      <h3 className="text-base font-bold text-foreground mt-0.5">Complete Your Setup (Save 10%)</h3>
                     </div>
+                    <span className="text-xs text-muted-foreground">Select items to include in your studio bundle:</span>
                   </div>
 
-                  {/* Additional Bundle Products */}
-                  {bundleItems.map((item) => {
-                    const isChecked = selectedBundleIds.includes(item.id);
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() =>
-                          setSelectedBundleIds((prev) =>
-                            isChecked ? prev.filter((id) => id !== item.id) : [...prev, item.id],
-                          )
-                        }
-                        className={`flex items-center gap-4 rounded-2xl border p-3.5 sm:p-4 cursor-pointer transition ${
-                          isChecked
-                            ? "border-foreground bg-surface"
-                            : "border-hairline bg-background opacity-75"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          readOnly
-                          className="h-4 w-4 accent-accent"
-                        />
-                        <img
-                          src={item.img}
-                          alt={item.name}
-                          className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-foreground">{item.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.subtitle} · ${item.price.toLocaleString()}
+                  {/* Horizontal / Grid Compact Items */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* Main product (locked) */}
+                    <div className="flex items-center gap-3 rounded-2xl border-2 border-foreground bg-surface/80 p-3 relative">
+                      <span className="absolute top-2 right-2 bg-foreground text-background text-[8px] font-extrabold rounded-full px-1.5 py-0.5 uppercase tracking-wider">
+                        THIS ITEM
+                      </span>
+                      <img
+                        src={product.img}
+                        alt={product.name}
+                        className="h-12 w-12 rounded-xl object-cover shrink-0 border border-hairline"
+                      />
+                      <div className="flex-1 min-w-0 pr-12">
+                        <div className="text-xs font-bold text-foreground truncate">{product.name}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">{product.subtitle}</div>
+                        <div className="mt-0.5 text-xs font-bold text-foreground">${product.price.toLocaleString()}</div>
+                      </div>
+                    </div>
+
+                    {/* Bundle items */}
+                    {bundleItems.map((item, idx) => {
+                      const isChecked = selectedBundleIds.includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() =>
+                            setSelectedBundleIds((prev) =>
+                              isChecked ? prev.filter((id) => id !== item.id) : [...prev, item.id],
+                            )
+                          }
+                          className={`flex items-center gap-3 rounded-2xl border p-3 cursor-pointer transition-all ${
+                            isChecked
+                              ? "border-foreground bg-surface shadow-xs"
+                              : "border-hairline bg-background hover:border-foreground/30 opacity-75"
+                          }`}
+                        >
+                          <img
+                            src={item.img}
+                            alt={item.name}
+                            className={`h-12 w-12 rounded-xl object-cover shrink-0 border border-hairline transition-opacity ${!isChecked ? "opacity-60" : ""}`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold text-foreground truncate">{item.name}</div>
+                            <div className="text-[11px] text-muted-foreground truncate">{item.subtitle}</div>
+                            <div className="mt-0.5 flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-foreground">${item.price.toLocaleString()}</span>
+                              {isChecked && (
+                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-500/10 rounded-full px-1.5 py-0.2">−10%</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isChecked ? "border-foreground bg-foreground" : "border-hairline bg-background"}`}>
+                            {isChecked && <Check className="h-2.5 w-2.5 text-background" />}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-6 border-t border-hairline pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <span className="text-xs text-muted-foreground">Combined Bundle Price:</span>
-                    <div className="text-xl sm:text-2xl font-bold text-foreground">
-                      ${bundleTotal.toLocaleString()}
-                    </div>
+                      );
+                    })}
                   </div>
-                  <Button
-                    onClick={handleAddBundleToCart}
-                    className="w-full sm:w-auto rounded-full px-6 py-2.5 text-xs font-bold"
-                  >
-                    Add Bundle to Studio Bag &rarr;
-                  </Button>
+
+                  {/* Bundle CTA Summary Bar */}
+                  <div className="border-t border-hairline pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-xs text-muted-foreground font-semibold">Combined Bundle Total:</span>
+                      <span className="text-xl font-bold text-foreground">${bundleTotal.toLocaleString()}</span>
+                      {selectedBundleIds.length > 0 && (
+                        <span className="text-[11px] text-emerald-600 font-semibold bg-emerald-500/10 rounded-full px-2 py-0.5">
+                          10% discount applied
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      onClick={handleAddBundleToCart}
+                      className="w-full sm:w-auto rounded-full px-6 py-2.5 text-xs font-bold shadow-sm"
+                    >
+                      <ShoppingBag className="h-3.5 w-3.5 mr-2" />
+                      Add Bundle to Studio Bag
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Tab 3: Reviews */}
+            {/* ── Tab 3: Verified Reviews ── */}
             {activeTab === "reviews" && (
-              <div className="max-w-4xl space-y-4 sm:space-y-6">
+              <div className="w-full space-y-6">
                 {product.reviews.length === 0 ? (
-                  <div className="rounded-2xl border border-hairline bg-background p-8 text-center text-xs text-muted-foreground">
-                    No written reviews submitted yet for this newly featured studio item.
+                  <div className="rounded-2xl border border-hairline bg-background p-12 text-center space-y-3">
+                    <Star className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-sm font-semibold text-foreground">No Reviews Yet</p>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      Be the first to review this product after purchase via your order history.
+                    </p>
                   </div>
                 ) : (
-                  product.reviews.map((rev) => (
-                    <div
-                      key={rev.id}
-                      className="rounded-2xl border border-hairline bg-background p-5 sm:p-6 shadow-xs"
-                    >
-                      <div className="flex items-center justify-between text-xs font-semibold">
-                        <span className="text-foreground">{rev.author}</span>
-                        <span className="text-muted-foreground">{rev.date}</span>
-                      </div>
-                      <div className="mt-1 text-amber-500 font-bold text-xs">
-                        {"★".repeat(rev.rating)}
-                      </div>
-                      <h4 className="mt-2 text-sm font-bold text-foreground">{rev.title}</h4>
-                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                        {rev.comment}
-                      </p>
-                    </div>
-                  ))
+                  <>
+                    {/* Rating Summary Header */}
+                    {(() => {
+                      const totalCount = product.reviews.length || product.reviewsCount;
+                      const avgRating =
+                        product.reviews.length > 0
+                          ? product.reviews.reduce((acc, r) => acc + r.rating, 0) / product.reviews.length
+                          : product.rating;
+
+                      return (
+                        <div className="rounded-2xl border border-hairline bg-background p-5 sm:p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                          {/* Average Score */}
+                          <div className="text-center shrink-0">
+                            <div className="text-5xl font-bold text-foreground leading-none">
+                              {avgRating.toFixed(1)}
+                            </div>
+                            <div className="flex items-center justify-center gap-0.5 mt-2">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star
+                                  key={s}
+                                  className={`h-4 w-4 ${s <= Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-hairline"}`}
+                                />
+                              ))}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 font-semibold">{totalCount} reviews</div>
+                          </div>
+
+                          {/* Distribution bars */}
+                          <div className="flex-1 w-full space-y-1.5">
+                            {[5, 4, 3, 2, 1].map((star) => {
+                              const count = product.reviews.filter((r) => r.rating === star).length;
+                              const pct = product.reviews.length > 0 ? Math.round((count / product.reviews.length) * 100) : 0;
+                              return (
+                                <div key={star} className="flex items-center gap-2.5 text-xs">
+                                  <span className="w-4 text-right font-semibold text-muted-foreground shrink-0">{star}</span>
+                                  <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />
+                                  <div className="flex-1 h-1.5 rounded-full bg-surface border border-hairline overflow-hidden">
+                                    <div
+                                      className="h-full bg-amber-400 rounded-full transition-all duration-700"
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="w-8 text-muted-foreground shrink-0">{pct}%</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Individual Review Cards & Pagination */}
+                    {(() => {
+                      const REVIEWS_PER_PAGE = 5;
+                      const totalPages = Math.ceil(product.reviews.length / REVIEWS_PER_PAGE) || 1;
+                      const currentPage = Math.min(reviewsPage, totalPages);
+                      const startIndex = (currentPage - 1) * REVIEWS_PER_PAGE;
+                      const paginatedReviews = product.reviews.slice(startIndex, startIndex + REVIEWS_PER_PAGE);
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="space-y-4">
+                            {paginatedReviews.map((rev) => (
+                              <div
+                                key={rev.id}
+                                className="rounded-2xl border border-hairline bg-background p-5 sm:p-6 shadow-xs space-y-4 hover:border-foreground/20 transition-all"
+                              >
+                                {/* Review Header */}
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-center gap-3">
+                                    {/* Avatar / Initials */}
+                                    <div className="h-9 w-9 rounded-full bg-foreground text-background text-sm font-bold flex items-center justify-center shrink-0">
+                                      {rev.author.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-bold text-foreground">{rev.author}</div>
+                                      <div className="text-[11px] text-muted-foreground mt-0.5">{rev.date}</div>
+                                    </div>
+                                  </div>
+                                  {/* Star Rating */}
+                                  <div className="flex items-center gap-0.5 shrink-0">
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                      <Star
+                                        key={s}
+                                        className={`h-4 w-4 ${s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Title + Comment */}
+                                <div>
+                                  <h4 className="text-sm font-bold text-foreground">{rev.title}</h4>
+                                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{rev.comment}</p>
+                                </div>
+
+                                {/* Media (if exists) */}
+                                {rev.mediaUrl && (
+                                  <div className="space-y-2">
+                                    <img
+                                      src={rev.mediaUrl}
+                                      alt={rev.mediaCaption || "Review photo"}
+                                      className="w-full max-w-xs rounded-xl border border-hairline object-cover aspect-video"
+                                    />
+                                    {rev.mediaCaption && (
+                                      <p className="text-[11px] text-muted-foreground italic">{rev.mediaCaption}</p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Helpful footer */}
+                                <div className="flex items-center justify-between pt-1 border-t border-hairline">
+                                  <span className="text-[11px] text-muted-foreground">Was this review helpful?</span>
+                                  <div className="flex items-center gap-2">
+                                    <button className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-full border border-hairline hover:border-foreground/30 cursor-pointer">
+                                      Yes
+                                    </button>
+                                    <button className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-full border border-hairline hover:border-foreground/30 cursor-pointer">
+                                      No
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Clean Pagination Bar (Only when total items > 5) */}
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-between border-t border-hairline pt-4 mt-6">
+                              <span className="text-xs text-muted-foreground font-semibold">
+                                Showing {startIndex + 1}–{Math.min(startIndex + REVIEWS_PER_PAGE, product.reviews.length)} of {product.reviews.length} reviews
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  onClick={() => setReviewsPage((p) => Math.max(1, p - 1))}
+                                  disabled={currentPage === 1}
+                                  className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                                    currentPage === 1
+                                      ? "border-hairline bg-surface text-muted-foreground/50 cursor-not-allowed"
+                                      : "border-hairline bg-background text-foreground hover:bg-surface cursor-pointer"
+                                  }`}
+                                >
+                                  Previous
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                                  <button
+                                    key={pageNum}
+                                    onClick={() => setReviewsPage(pageNum)}
+                                    className={`h-7 w-7 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                                      currentPage === pageNum
+                                        ? "bg-foreground text-background"
+                                        : "bg-background text-muted-foreground hover:text-foreground border border-hairline"
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                ))}
+                                <button
+                                  onClick={() => setReviewsPage((p) => Math.min(totalPages, p + 1))}
+                                  disabled={currentPage === totalPages}
+                                  className={`px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                                    currentPage === totalPages
+                                      ? "border-hairline bg-surface text-muted-foreground/50 cursor-not-allowed"
+                                      : "border-hairline bg-background text-foreground hover:bg-surface cursor-pointer"
+                                  }`}
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </>
                 )}
               </div>
             )}
           </div>
         </section>
+
       </div>
 
 
@@ -684,6 +1018,11 @@ function ProductDetailsPage() {
       {/* Shared Global Footer */}
       <Footer />
       <SignUpNoticeModal isOpen={signUpNoticeOpen} onClose={() => setSignUpNoticeOpen(false)} />
+      <SignOutConfirmModal
+        isOpen={signOutModalOpen}
+        onClose={() => setSignOutModalOpen(false)}
+        onConfirmSignOut={() => navigate({ to: "/auth" })}
+      />
       <AIShoppingAssistant
         onAddToCart={handleAddToCart}
         onShowSignUpNotice={() => setSignUpNoticeOpen(true)}

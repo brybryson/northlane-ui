@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Footer } from "@/components/layout/Footer";
 import { useCart } from "@/context/cart-context";
 import { CartDrawer } from "@/components/CartDrawer";
+import { SignOutConfirmModal } from "@/components/SignOutConfirmModal";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -34,23 +35,53 @@ function AccountLayout() {
   const { itemCount, setIsOpen } = useCart();
   const [authUser, setAuthUser] = useState<any>(null);
   const [fullName, setFullName] = useState("Vrsnmllz03");
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setAuthUser(data.user);
-        if (data.user.email) {
-          const emailName = data.user.email.split("@")[0];
-          setFullName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+    let mounted = true;
+    const fetchUser = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        if (!mounted) return;
+        if (data.user) {
+          setAuthUser(data.user);
+          const meta = data.user.user_metadata || {};
+          if (data.user.email) {
+            const emailName = data.user.email.split("@")[0];
+            setFullName(meta.full_name || emailName.charAt(0).toUpperCase() + emailName.slice(1));
+          }
+        }
+      });
+    };
+
+    fetchUser();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (!mounted) return;
+      if (session?.user) {
+        setAuthUser(session.user);
+        const meta = session.user.user_metadata || {};
+        if (session.user.email) {
+          const emailName = session.user.email.split("@")[0];
+          setFullName(meta.full_name || emailName.charAt(0).toUpperCase() + emailName.slice(1));
         }
       }
     });
+
+    const handleCustomUpdate = () => {
+      fetchUser();
+    };
+
+    window.addEventListener("northlane_user_profile_updated", handleCustomUpdate);
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+      window.removeEventListener("northlane_user_profile_updated", handleCustomUpdate);
+    };
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast.success("Signed out safely");
-    navigate({ to: "/auth" });
+  const handleSignOut = () => {
+    setSignOutModalOpen(true);
   };
 
   const navTabs = [
@@ -146,58 +177,35 @@ function AccountLayout() {
                 )}
               </button>
 
-              <Link
-                to="/account"
-                className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden"
-                aria-label="Account"
-              >
-                {authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture ? (
-                  <img
-                    src={authUser.user_metadata.avatar_url || authUser.user_metadata.picture}
-                    alt="User Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="h-4 w-4" />
-                )}
-              </Link>
+              {(() => {
+                const navAvatar =
+                  authUser?.user_metadata?.avatar_url !== undefined && authUser?.user_metadata?.avatar_url !== null
+                    ? authUser.user_metadata.avatar_url
+                    : (authUser?.user_metadata?.picture || "");
+                return (
+                  <Link
+                    to="/account"
+                    className="relative flex items-center justify-center h-8 w-8 rounded-full border border-foreground bg-foreground text-background transition cursor-pointer overflow-hidden"
+                    aria-label="Account"
+                  >
+                    {navAvatar ? (
+                      <img
+                        src={navAvatar}
+                        alt="User Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-4 w-4" />
+                    )}
+                  </Link>
+                );
+              })()}
             </div>
           </div>
         </header>
 
-        {/* User Hero Header Banner (Only rendered on main /account dashboard) */}
-        {(location.pathname === "/account" || location.pathname === "/account/") && (
-          <section className="bg-surface border-b border-hairline py-6 sm:py-10">
-            <div className="container-editorial">
-              <div className="flex items-center gap-4">
-                {authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture ? (
-                  <img
-                    src={authUser.user_metadata.avatar_url || authUser.user_metadata.picture}
-                    alt="User Profile"
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover shadow-xs border border-hairline shrink-0"
-                  />
-                ) : (
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-foreground text-background font-bold text-2xl flex items-center justify-center shadow-xs border border-hairline shrink-0">
-                    {fullName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.18em] text-accent">
-                    Customer Portal
-                  </div>
-                  <h1 className="mt-1 text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-                    {fullName}
-                  </h1>
-                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
-                    <span>{authUser?.email || "vrsnmllz03@gmail.com"}</span>
-                    <span>•</span>
-                    <span>Member since 2026</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+
+
 
         {/* Main Modular Sub-Route Content Outlet */}
         <main className="container-editorial py-8 sm:py-12">
@@ -208,6 +216,11 @@ function AccountLayout() {
       {/* Global Footer & Cart Drawer */}
       <Footer />
       <CartDrawer />
+      <SignOutConfirmModal
+        isOpen={signOutModalOpen}
+        onClose={() => setSignOutModalOpen(false)}
+        onConfirmSignOut={() => navigate({ to: "/auth" })}
+      />
     </div>
   );
 }

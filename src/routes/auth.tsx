@@ -35,16 +35,16 @@ function AuthPage() {
       if (data?.role === "admin") {
         navigate({ to: "/admin" });
       } else {
-        navigate({ to: "/" });
+        navigate({ to: "/account" });
       }
     } catch {
-      navigate({ to: "/" });
+      navigate({ to: "/account" });
     }
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) redirectBasedOnRole(data.user.id);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) redirectBasedOnRole(session.user.id);
     });
   }, [navigate]);
 
