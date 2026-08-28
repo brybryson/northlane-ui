@@ -52,44 +52,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOpen, setIsOpen] = useState(false);
   const [coupon, setCoupon] = useState<Coupon | null>(null);
 
-  // Load cart from localStorage ONLY if authenticated, otherwise reset to 0 items
+  // Load cart from localStorage on mount
   useEffect(() => {
-    const syncCartWithAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data?.user) {
-        setItems([]);
-        setCoupon(null);
-        try {
-          localStorage.removeItem(STORAGE_KEY);
-        } catch {}
-      } else {
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) {
-            setItems(JSON.parse(saved));
-          }
-        } catch {}
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setItems(JSON.parse(saved));
       }
-    };
-
-    syncCartWithAuth();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session?.user) {
-        setItems([]);
-        setCoupon(null);
-        try {
-          localStorage.removeItem(STORAGE_KEY);
-        } catch {}
-      } else {
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) {
-            setItems(JSON.parse(saved));
-          }
-        } catch {}
-      }
-    });
+    } catch {}
 
     const handleCartCleared = () => {
       setItems([]);
@@ -101,7 +71,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     window.addEventListener("northlane_cart_cleared", handleCartCleared);
     return () => {
-      sub.subscription.unsubscribe();
       window.removeEventListener("northlane_cart_cleared", handleCartCleared);
     };
   }, []);

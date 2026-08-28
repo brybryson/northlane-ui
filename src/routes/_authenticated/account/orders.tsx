@@ -616,6 +616,120 @@ function OrdersPage() {
   const [ratingOrder, setRatingOrder] = useState<Order | null>(null);
   const [viewReviewItem, setViewReviewItem] = useState<OrderItem | null>(null);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadOrders = async () => {
+      try {
+        let dbOrders: Order[] = [];
+        const { data: userRes } = await supabase.auth.getUser();
+        const userId = userRes?.user?.id;
+
+        if (userId) {
+          const { data: ordersData, error } = await (supabase as any)
+            .from("orders")
+            .select(`
+              id,
+              created_at,
+              total,
+              status,
+              carrier,
+              tracking_number,
+              estimated_delivery,
+              shipping_address,
+              timeline_step,
+              order_items (
+                id,
+                product_id,
+                product_name,
+                product_image,
+                sku,
+                price,
+                quantity
+              )
+            `)
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false });
+
+          if (!error && ordersData && mounted) {
+            dbOrders = ordersData.map((o: any) => ({
+              id: o.id,
+              date: new Date(o.created_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              }),
+              total: Number(o.total),
+              status: (o.status || "Placed") as OrderStatus,
+              carrier: o.carrier || "DHL Express",
+              trackingNumber: o.tracking_number || "DHL-9842109482",
+              estimatedDelivery: o.estimated_delivery || "3-5 Business Days",
+              shippingAddress: o.shipping_address || "124 Copenhagen Way, Studio #4B, San Francisco, CA 94107",
+              timelineStep: o.timeline_step || 1,
+              items: (o.order_items || []).map((it: any) => ({
+                id: it.id,
+                productId: it.product_id,
+                name: it.product_name,
+                price: Number(it.price),
+                qty: it.quantity,
+                image: it.product_image || productKeyboard,
+                sku: it.sku || `NL-${it.product_id?.toUpperCase()}`,
+              })),
+            }));
+          }
+        }
+
+        // Local stored orders
+        let localOrders: Order[] = [];
+        try {
+          const stored = localStorage.getItem("northlane_user_orders");
+          if (stored) {
+            localOrders = JSON.parse(stored);
+          }
+        } catch {}
+
+        if (!mounted) return;
+
+        // Merge: dbOrders + localOrders (deduplicated by ID) + INITIAL_ORDERS
+        const orderMap = new Map<string, Order>();
+        dbOrders.forEach((o) => orderMap.set(o.id, o));
+        localOrders.forEach((o) => {
+          if (!orderMap.has(o.id)) orderMap.set(o.id, o);
+        });
+        INITIAL_ORDERS.forEach((o) => {
+          if (!orderMap.has(o.id)) orderMap.set(o.id, o);
+        });
+
+        const mergedOrders = Array.from(orderMap.values());
+        setOrders(mergedOrders);
+
+        // Auto-expand all orders
+        setExpandedOrders((prev) => {
+          const updated = { ...prev };
+          mergedOrders.forEach((o) => {
+            if (updated[o.id] === undefined) updated[o.id] = true;
+          });
+          return updated;
+        });
+      } catch (err) {
+        console.error("Failed to load orders:", err);
+      }
+    };
+
+    loadOrders();
+
+    const handleOrderCreated = () => {
+      loadOrders();
+    };
+
+    window.addEventListener("northlane_order_created", handleOrderCreated);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("northlane_order_created", handleOrderCreated);
+    };
+  }, []);
+
   const handleCopyTracking = (num: string) => {
     navigator.clipboard.writeText(num);
     setCopiedTracking(num);

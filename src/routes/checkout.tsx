@@ -23,6 +23,7 @@ import {
   Plus,
   Menu,
   X,
+  Sparkles,
 } from "lucide-react";
 import { useCart } from "../context/cart-context";
 import { Button } from "../components/ui/button";
@@ -280,10 +281,10 @@ function CheckoutPage() {
         return;
       }
 
-      // Validate Email (must contain @ and end with .com)
+      // Validate Email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(cleanEmail) || !cleanEmail.toLowerCase().includes(".com")) {
-        toast.error("Please enter a valid Email Address containing '@' and ending with '.com' (e.g. name@example.com).");
+      if (!emailRegex.test(cleanEmail)) {
+        toast.error("Please enter a valid Email Address (e.g. name@example.com).");
         return;
       }
 
@@ -348,15 +349,15 @@ function CheckoutPage() {
         console.warn("Backend API endpoint offline, using client payment fallback");
       }
 
-      // If user added a new card and opted to save it to wallet
-      if (selectedPaymentMethodId === "new" && paymentInfo.cardNumber && paymentInfo.saveCard) {
-        const rawDigits = paymentInfo.cardNumber.replace(/\s+/g, "");
-        const last4 = rawDigits.slice(-4) || "4242";
-        const [mStr, yStr] = paymentInfo.expDate.split("/");
-        const expMonth = parseInt(mStr, 10) || 12;
-        const expYear = parseInt(yStr, 10) || 2028;
-        const brand = rawDigits.startsWith("4") ? "Visa" : rawDigits.startsWith("5") ? "Mastercard" : "Visa";
+      // Relax card details for demonstration environment - fallback to demo values if partially entered
+      const demoCardDigits = paymentInfo.cardNumber?.replace(/\s+/g, "") || "4242424242424242";
+      const last4 = demoCardDigits.slice(-4) || "4242";
+      const [mStr, yStr] = (paymentInfo.expDate || "12/28").split("/");
+      const expMonth = parseInt(mStr, 10) || 12;
+      const expYear = parseInt(yStr, 10) || 2028;
+      const brand = demoCardDigits.startsWith("4") ? "Visa" : demoCardDigits.startsWith("5") ? "Mastercard" : "Visa";
 
+      if (selectedPaymentMethodId === "new" && paymentInfo.saveCard) {
         const newMethod: PaymentMethodItem = {
           id: `pm-${Date.now()}`,
           brand,
@@ -381,47 +382,171 @@ function CheckoutPage() {
       }
 
       const orderId = `NL-${Math.floor(100000 + Math.random() * 900000)}`;
+      const trackingNumber = `DHL-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      const formattedAddress = `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.state} ${shippingInfo.zip}, ${shippingInfo.country}`;
+      const estimatedDelivery = shippingMethod === "express" ? "3-4 Business Days" : "5-7 Business Days";
 
+      // 1. Get authenticated user if available
+      const { data: userRes } = await supabase.auth.getUser();
+      const currentUserId = userRes?.user?.id || null;
+
+      // 2. Insert into Supabase 'orders' table
+      try {
+        const { error: orderError } = await (supabase as any).from("orders").insert({
+          id: orderId,
+          user_id: currentUserId,
+          status: "Placed",
+          total: grandTotal,
+          timeline_step: 1,
+          carrier: shippingMethod === "express" ? "DHL Express" : "FedEx Ground",
+          tracking_number: trackingNumber,
+          estimated_delivery: estimatedDelivery,
+          shipping_address: formattedAddress,
+        });
+
+        if (orderError) {
+          console.warn("[Checkout] Supabase orders table notice:", orderError.message);
+        }
+
+        // 3. Insert into Supabase 'order_items' table
+        if (items.length > 0) {
+          const itemPayloads = items.map((it) => ({
+            order_id: orderId,
+            product_id: it.id,
+            product_name: it.name,
+            product_image: it.image || "",
+            sku: it.sku || `NL-${it.id.toUpperCase()}`,
+            price: it.price,
+            quantity: it.quantity,
+          }));
+
+          const { error: itemsError } = await (supabase as any).from("order_items").insert(itemPayloads);
+          if (itemsError) {
+            console.warn("[Checkout] Supabase order_items notice:", itemsError.message);
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[Checkout] Database write fallback to local storage:", dbErr);
+      }
+
+      // 4. Formulate complete local order structure for immediate UI sync
       const orderSummary = {
-        orderId,
-        items,
-        shippingInfo,
-        shippingMethod,
-        grandTotal,
+        id: orderId,
         date: new Date().toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
+          month: "short",
+          day: "2-digit",
           year: "numeric",
         }),
+        total: grandTotal,
+        status: "Placed",
+        carrier: shippingMethod === "express" ? "DHL Express" : "FedEx Ground",
+        trackingNumber: trackingNumber,
+        estimatedDelivery: estimatedDelivery,
+        shippingAddress: formattedAddress,
+        timelineStep: 1,
+        items: items.map((it) => ({
+          id: `order-item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          productId: it.id,
+          name: it.name,
+          price: it.price,
+          qty: it.quantity,
+          image: it.image,
+          sku: it.sku || `NL-${it.id.toUpperCase()}`,
+        })),
       };
 
-      localStorage.setItem("northlane_last_order", JSON.stringify(orderSummary));
+      // Store in northlane_user_orders & northlane_last_order
+      try {
+        const storedOrders = localStorage.getItem("northlane_user_orders");
+        const parsedOrders = storedOrders ? JSON.parse(storedOrders) : [];
+        localStorage.setItem("northlane_user_orders", JSON.stringify([orderSummary, ...parsedOrders]));
+        localStorage.setItem("northlane_last_order", JSON.stringify(orderSummary));
+      } catch {}
+
+      // 5. Dispatch Luxury Confirmation Email via Backend API
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        await fetch(`${apiUrl}/api/automation/send-order-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId,
+            customerEmail: shippingInfo.email,
+            customerName: `${shippingInfo.firstName} ${shippingInfo.lastName}`.trim() || "Valued Client",
+            items: items.map((it) => ({
+              id: it.id,
+              name: it.name,
+              price: it.price,
+              qty: it.quantity,
+              image: it.image,
+              sku: it.sku || `NL-${it.id.toUpperCase()}`,
+            })),
+            subtotal,
+            discount: Math.max(0, subtotal - total),
+            shipping: shippingCost,
+            grandTotal,
+            shippingAddress: formattedAddress,
+            trackingNumber,
+            carrier: shippingMethod === "express" ? "DHL Express" : "FedEx Ground",
+            estimatedDelivery,
+          }),
+        });
+      } catch (emailErr) {
+        console.warn("[Checkout] Confirmation email dispatch notice:", emailErr);
+      }
+
+      // Dispatch event for any active tabs
+      try {
+        window.dispatchEvent(new CustomEvent("northlane_order_created", { detail: orderSummary }));
+      } catch {}
+
       clearCart();
       toast.success(`Order #${orderId} Placed Successfully!`, {
-        description: `Thank you! We've sent a confirmation email to ${shippingInfo.email}.`,
+        description: `Demonstration purchase registered. Tracking #${trackingNumber} created.`,
       });
-      navigate({ to: "/shop" });
+
+      // Navigate to Account Orders tracking hub
+      navigate({ to: "/account/orders" });
     } catch (err) {
-      console.error("Payment intent error:", err);
+      console.error("Order creation fallback error:", err);
       const orderId = `NL-${Math.floor(100000 + Math.random() * 900000)}`;
+      const trackingNumber = `DHL-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      const formattedAddress = `${shippingInfo.address}, ${shippingInfo.city}, ${shippingInfo.state} ${shippingInfo.zip}, ${shippingInfo.country}`;
       const orderSummary = {
-        orderId,
-        items,
-        shippingInfo,
-        shippingMethod,
-        grandTotal,
+        id: orderId,
         date: new Date().toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
+          month: "short",
+          day: "2-digit",
           year: "numeric",
         }),
+        total: grandTotal,
+        status: "Placed",
+        carrier: "DHL Express",
+        trackingNumber: trackingNumber,
+        estimatedDelivery: "3-5 Business Days",
+        shippingAddress: formattedAddress,
+        timelineStep: 1,
+        items: items.map((it) => ({
+          id: `order-item-${Date.now()}`,
+          productId: it.id,
+          name: it.name,
+          price: it.price,
+          qty: it.quantity,
+          image: it.image,
+          sku: it.sku || `NL-${it.id.toUpperCase()}`,
+        })),
       };
-      localStorage.setItem("northlane_last_order", JSON.stringify(orderSummary));
+      try {
+        const storedOrders = localStorage.getItem("northlane_user_orders");
+        const parsedOrders = storedOrders ? JSON.parse(storedOrders) : [];
+        localStorage.setItem("northlane_user_orders", JSON.stringify([orderSummary, ...parsedOrders]));
+        localStorage.setItem("northlane_last_order", JSON.stringify(orderSummary));
+      } catch {}
       clearCart();
       toast.success(`Order #${orderId} Placed Successfully!`, {
-        description: `Thank you! We've sent a confirmation email to ${shippingInfo.email}.`,
+        description: `Demonstration purchase completed.`,
       });
-      navigate({ to: "/shop" });
+      navigate({ to: "/account/orders" });
     } finally {
       setIsProcessing(false);
     }
@@ -1180,6 +1305,21 @@ function CheckoutPage() {
                     </span>
                   </div>
 
+                  {/* Demonstration Environment Notice Banner */}
+                  <div className="p-4 rounded-2xl border border-accent/20 bg-accent/5 flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-accent/10 text-accent shrink-0 mt-0.5">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div className="text-xs space-y-1 text-muted-foreground">
+                      <p className="font-bold text-foreground tracking-tight">
+                        Demonstration Environment Active
+                      </p>
+                      <p className="leading-relaxed">
+                        This store is in demo mode. <strong>No real money will be charged or deducted</strong> from your bank account or card. You may enter any test numbers or leave default demo values.
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Saved Cards Selection from Wallet */}
                   {savedPaymentMethods.length > 0 && (
                     <div className="space-y-3">
@@ -1243,7 +1383,7 @@ function CheckoutPage() {
                     <div className="space-y-4 pt-3 border-t border-hairline/60">
                       <div className="space-y-1.5">
                         <Label htmlFor="cardName" className="text-xs font-bold">
-                          Cardholder Name <span className="text-rose-500">*</span>
+                          Cardholder Name
                         </Label>
                         <Input
                           id="cardName"
@@ -1254,23 +1394,24 @@ function CheckoutPage() {
                               nameOnCard: e.target.value.replace(/[^A-Za-z\s'-]/g, ""),
                             })
                           }
-                          placeholder="e.g. Alex Morgan"
-                          required
+                          placeholder="e.g. Alex Morgan (or any name)"
                           className="bg-background text-xs rounded-xl"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="cardNumber" className="text-xs font-bold">
-                          Card Number <span className="text-rose-500">*</span>
-                        </Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="cardNumber" className="text-xs font-bold">
+                            Card Number
+                          </Label>
+                          <span className="text-[10px] text-accent font-medium">Demo: Any numbers allowed</span>
+                        </div>
                         <div className="relative">
                           <Input
                             id="cardNumber"
                             value={paymentInfo.cardNumber}
                             onChange={(e) => setPaymentInfo({ ...paymentInfo, cardNumber: e.target.value })}
-                            placeholder="4242 4242 4242 4242"
-                            required
+                            placeholder="4242 4242 4242 4242 (or any digits)"
                             className="bg-background text-xs rounded-xl pr-10"
                           />
                           <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1280,24 +1421,23 @@ function CheckoutPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <Label htmlFor="expDate" className="text-xs font-bold">
-                            Expiration Date <span className="text-rose-500">*</span>
+                            Expiration Date
                           </Label>
                           <Input
                             id="expDate"
-                            placeholder="MM/YY"
+                            placeholder="MM/YY (e.g. 12/28)"
                             value={paymentInfo.expDate}
                             onChange={(e) => setPaymentInfo({ ...paymentInfo, expDate: e.target.value })}
-                            required
                             className="bg-background text-xs rounded-xl"
                           />
                         </div>
                         <div className="space-y-1.5">
                           <Label htmlFor="cvc" className="text-xs font-bold">
-                            CVC / CVV <span className="text-rose-500">*</span>
+                            CVC / CVV
                           </Label>
                           <Input
                             id="cvc"
-                            placeholder="3 digits"
+                            placeholder="3 digits (e.g. 123)"
                             value={paymentInfo.cvc}
                             onChange={(e) =>
                               setPaymentInfo({
@@ -1305,7 +1445,6 @@ function CheckoutPage() {
                                 cvc: e.target.value.replace(/\D/g, ""),
                               })
                             }
-                            required
                             className="bg-background text-xs rounded-xl"
                           />
                         </div>
@@ -1318,7 +1457,7 @@ function CheckoutPage() {
                           onChange={(e) => setPaymentInfo({ ...paymentInfo, saveCard: e.target.checked })}
                           className="rounded text-accent focus:ring-accent"
                         />
-                        <span>Save card securely to my wallet</span>
+                        <span>Save card to my demo wallet</span>
                       </label>
                     </div>
                   )}

@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 .output
+.vercel
 .vinxi
 .tanstack/**
 .nitro
@@ -34,3 +35,7 @@ dist-ssr
 *.md
 .env
 
+# QA Automation Artifacts
+qa-artifacts/
+playwright-report/
+test-results/
